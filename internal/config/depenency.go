@@ -16,7 +16,7 @@ type DI struct {
 
 func InitDependency() *DI {
 	dbService := db.GetInstance()
-	llm, err := ollama.New(ollama.WithModel("llama2"))
+	llm, err := ollama.New(ollama.WithModel("gemma:2b"))
 	if err != nil {
 		log.Fatal(err)
 	}

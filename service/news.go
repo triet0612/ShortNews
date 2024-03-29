@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"encoding/xml"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/config"
@@ -16,6 +14,8 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/google/uuid"
+	"github.com/mmcdole/gofeed"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/ollama"
 )
@@ -43,16 +43,12 @@ func (r *RssPullService) NewsExtraction() {
 	wg := sync.WaitGroup{}
 	articlepool := make(chan struct{}, runtime.NumCPU())
 	for _, source := range *sourceList {
-		srcClient := http.Client{Timeout: 10 * time.Second}
-		res, err := srcClient.Get(source.Link)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		fp := gofeed.NewParser()
+		feed, err := fp.ParseURLWithContext(source.Link, ctx)
 		if err != nil {
 			slog.Error(err.Error())
-			continue
-		}
-
-		rss := model.RSSNews{}
-		if err := xml.NewDecoder(res.Body).Decode(&rss); err != nil {
-			log.Println("NewsExtraction error: ", err)
 			continue
 		}
 
@@ -60,10 +56,24 @@ func (r *RssPullService) NewsExtraction() {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for _, article := range rss.Channel.Items {
-				article.Publisher = source.Publisher
-
-				if err := r.Di.DbCon.InsertArticle(&article); err != nil {
+			for _, article := range feed.Items {
+				a := model.Article{
+					ArticleID:   uuid.NewString(),
+					Link:        article.Link,
+					Title:       article.Title,
+					PubDate:     article.PublishedParsed,
+					PublisherID: source.PublisherID,
+				}
+				imageLink := ""
+				if article.Image != nil {
+					imageLink = (*article.Image).URL
+				} else {
+					a, ok := article.Extensions["media"]["thumbnail"]
+					if ok {
+						imageLink = a[0].Attrs["url"]
+					}
+				}
+				if err := r.Di.DbCon.InsertArticle(&a, imageLink); err != nil {
 					slog.Info(err.Error())
 					continue
 				}
@@ -90,23 +100,19 @@ func (r *RssPullService) ArticleSummarize() {
 		}
 		doc, err := goquery.NewDocumentFromReader(res.Body)
 		if err != nil {
-			slog.Error("ArticleSummarize error: %s", err)
+			slog.Error(err.Error())
 			continue
 		}
 		article.Summary = ""
 		doc.Find("p").Each(func(i int, s *goquery.Selection) {
 			article.Summary += s.Text()
 		})
-
 		if len(strings.Split(article.Summary, " ")) > 250 {
-			if article.Summary, err = llmSummarize(
-				r.Di.Llmodel, article.Summary,
-			); err != nil {
+			if article.Summary, err = llmSummarize(r.Di.Llmodel, article.Summary); err != nil {
 				slog.Warn(err.Error())
 				return
 			}
 		}
-
 		if err := r.Di.DbCon.UpdateSummaryArticle(&article); err != nil {
 			slog.Warn(err.Error())
 			return
@@ -141,11 +147,11 @@ func (r *RssPullService) UpdateThumbnail() {
 }
 
 func llmSummarize(llm *ollama.LLM, doc string) (string, error) {
-	doc = doc + "\n" + `Return main content of the document above using the same language as the document with less than two-hundred words.`
+	doc = doc + "\n" + `Summarize the content of the document above using the same language as the document.`
 
 	ctx := context.Background()
 
-	textResponse, err := llm.Call(ctx, doc, llms.WithTemperature(0))
+	textResponse, err := llm.Call(ctx, doc, llms.WithTemperature(0), llms.WithMaxLength(250))
 
 	if err != nil {
 		return "", err

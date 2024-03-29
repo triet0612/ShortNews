@@ -14,3 +14,15 @@ test_rss_source1:
 test_rss_source2:
 	curl -i -X POST -H "Content-Type: application/json" \
 	-d '{"link":"https://infonet.vietnamnet.vn/rss/doi-song.rss"}' localhost:8000/api/rss
+
+test_rss_source3:
+	curl -i -X POST -H "Content-Type: application/json" \
+	-d '{"link":"https://abcnews.go.com/abcnews/topstories"}' localhost:8000/api/rss
+
+test_rss_source4:
+	curl -i -X POST -H "Content-Type: application/json" \
+	-d '{"link":"https://thanhnien.vn/rss/home.rss"}' localhost:8000/api/rss
+
+test_rss_source5:
+	curl -i -X POST -H "Content-Type: application/json" \
+	-d '{"link":"https://vneconomy.vn/tin-moi.rss"}' localhost:8000/api/rss
