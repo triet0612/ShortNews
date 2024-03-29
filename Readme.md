@@ -1,4 +1,4 @@
-## News Scrapper AI Enhanced
+## AI Enhanced RSS News App
 
 1. Program will get news from rss source.
 - Get news from multiple source hourly.
