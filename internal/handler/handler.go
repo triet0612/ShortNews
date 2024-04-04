@@ -3,10 +3,16 @@ package handler
 import (
 	"net/http"
 	"newscrapper/internal/config"
+	"newscrapper/internal/db"
 )
 
 type Handler struct {
-	DI config.DI
+	db    *db.DBService
+	clock *config.Clock
+}
+
+func NewHandler(db *db.DBService, clock *config.Clock) *Handler {
+	return &Handler{db: db, clock: clock}
 }
 
 func (h *Handler) Mount(mux *http.ServeMux) {
@@ -15,13 +21,13 @@ func (h *Handler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /api/rss", h.GetRssSource)
 	mux.HandleFunc("POST /api/rss", h.CreateRssSource)
 	mux.HandleFunc("PUT /api/rss", h.UpdateRssSource)
-	mux.HandleFunc("DELETE /api/rss", h.DeleteRssSource)
+	mux.HandleFunc("DELETE /api/rss/{id}", h.DeleteRssSource)
 
 	mux.HandleFunc("GET /api/articles", h.GetArticles)
-	mux.HandleFunc("GET /api/articles/{uuid}", h.GetArticlesFilterID)
-	mux.HandleFunc("GET /api/articles/thumbnail/{uuid}", h.GetArticleThumbnail)
-	mux.HandleFunc("PUT /api/articles/{uuid}", func(w http.ResponseWriter, r *http.Request) {})
-	mux.HandleFunc("DELETE /api/articles/{uuid}", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("GET /api/articles/{id}", h.GetArticlesFilterID)
+	mux.HandleFunc("GET /api/articles/thumbnail/{id}", h.GetArticleThumbnail)
+	mux.HandleFunc("GET /api/articles/audio/{id}", h.GetArticleAudio)
+	mux.HandleFunc("DELETE /api/articles/{id}", h.DeleteArticle)
 }
 
 func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {

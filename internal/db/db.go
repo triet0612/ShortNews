@@ -21,7 +21,7 @@ CREATE TABLE Article (
 	Link TEXT UNIQUE NOT NULL,
 	Title TEXT NOT NULL,
 	PubDate DATETIME NOT NULL,
-	Publisher TEXT NOT NULL,
+	PublisherID TEXT NOT NULL,
 	Summary TEXT NOT NULL DEFAULT ('')
 );
 CREATE TABLE Thumbnail (
@@ -39,9 +39,18 @@ CREATE TABLE Config (
 	KEY TEXT PRIMARY KEY,
 	VALUE TEXT NOT NULL
 );
+CREATE TABLE VoiceModel (
+	Language TEXT PRIMARY KEY,
+	ModelName TEXT
+);
+CREATE TABLE ArticleAudio(
+	ArticleID TEXT PRIMARY KEY NOT NULL,
+	Audio BLOB NOT NULL
+);
 CREATE INDEX "INDEX_ARTICLE" ON "Article" (
 	"PubDate" DESC
 );
+INSERT INTO VoiceModel VALUES ("Vietnamese", "vi_VN/vais1000_low");
 INSERT INTO Config VALUES ("RSS-refresh-rate", "5");`
 
 func GetInstance() *DBService {

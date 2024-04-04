@@ -2,15 +2,10 @@ package main
 
 import (
 	"newscrapper/internal/config"
-	"newscrapper/service"
+	"newscrapper/start"
 )
 
 func main() {
-
 	di := config.InitDependency()
-
-	s := service.RssPullService{Di: di}
-	go s.RunRssService()
-
-	service.RunHTTPServer(di)
+	start.RunServices(di)
 }

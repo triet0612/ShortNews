@@ -9,6 +9,7 @@ type NewsSource struct {
 	Publisher   string
 	Link        string
 	Language    string
+	Ext         map[string]interface{}
 }
 
 type Article struct {
@@ -18,10 +19,12 @@ type Article struct {
 	PubDate     *time.Time
 	PublisherID string
 	Summary     string
+	Ext         map[string]interface{}
 }
 
 type ArticleThumbnail struct {
 	ArticleID string
 	URL       string
 	Image     *[]byte
+	Ext       map[string]interface{}
 }

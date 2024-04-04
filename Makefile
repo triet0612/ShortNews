@@ -9,11 +9,11 @@ run_debug:
 
 test_rss_source1:
 	curl -i -X POST -H "Content-Type: application/json" \
-	-d '{"link":"https://vnexpress.net/rss/tin-moi-nhat.rss"}' localhost:8000/api/rss
+	-d '{"link":"https://vnexpress.net/rss/thoi-su.rss", "language":"Vietnamese"}' localhost:8000/api/rss
 
 test_rss_source2:
 	curl -i -X POST -H "Content-Type: application/json" \
-	-d '{"link":"https://infonet.vietnamnet.vn/rss/doi-song.rss"}' localhost:8000/api/rss
+	-d '{"link":"https://infonet.vietnamnet.vn/rss/doi-song.rss", "language":"Vietnamese"}' localhost:8000/api/rss
 
 test_rss_source3:
 	curl -i -X POST -H "Content-Type: application/json" \
@@ -21,8 +21,8 @@ test_rss_source3:
 
 test_rss_source4:
 	curl -i -X POST -H "Content-Type: application/json" \
-	-d '{"link":"https://thanhnien.vn/rss/home.rss"}' localhost:8000/api/rss
+	-d '{"link":"https://thanhnien.vn/rss/home.rss", "language":"Vietnamese"}' localhost:8000/api/rss
 
 test_rss_source5:
 	curl -i -X POST -H "Content-Type: application/json" \
-	-d '{"link":"https://vneconomy.vn/tin-moi.rss"}' localhost:8000/api/rss
+	-d '{"link":"https://vneconomy.vn/tin-moi.rss", "language":"Vietnamese"}' localhost:8000/api/rss
