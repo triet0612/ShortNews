@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/model"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -26,7 +28,7 @@ func (h *Handler) GetArticles(w http.ResponseWriter, r *http.Request) {
 	}
 	articles := []model.Article{}
 	rows, err := h.db.QueryContext(context.Background(),
-		"SELECT * FROM Article ORDER BY PubDate LIMIT ? OFFSET ?",
+		"SELECT * FROM Article ORDER BY datetime(PubDate) DESC LIMIT ? OFFSET ?",
 		limit, start,
 	)
 	if err != nil {
@@ -55,7 +57,7 @@ func (h *Handler) GetArticles(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) GetArticlesFilterID(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetArticleFilterID(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if err := uuid.Validate(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -79,6 +81,42 @@ func (h *Handler) GetArticlesFilterID(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(a); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+}
+
+func (h *Handler) GetArticleFullFilterID(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if err := uuid.Validate(id); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	link := ""
+	row := h.db.QueryRowContext(context.Background(),
+		"SELECT Link FROM Article WHERE ArticleID=?", id)
+	if err := row.Scan(&link); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "error no article", http.StatusNotFound)
+			return
+		}
+		slog.Error(err.Error())
+		http.Error(w, "error get articles", http.StatusInternalServerError)
+		return
+	}
+	client := http.Client{Timeout: 10 * time.Second}
+	res, err := client.Get(link)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "get article error", http.StatusInternalServerError)
+		return
+	}
+	defer res.Body.Close()
+	ans, err := io.ReadAll(res.Body)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "error decode body", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "text/html")
+	w.Write(ans)
 }
 
 func (h *Handler) GetArticleThumbnail(w http.ResponseWriter, r *http.Request) {

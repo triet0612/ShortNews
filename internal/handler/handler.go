@@ -24,7 +24,8 @@ func (h *Handler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /api/rss/{id}", h.DeleteRssSource)
 
 	mux.HandleFunc("GET /api/articles", h.GetArticles)
-	mux.HandleFunc("GET /api/articles/{id}", h.GetArticlesFilterID)
+	mux.HandleFunc("GET /api/articles/{id}", h.GetArticleFilterID)
+	mux.HandleFunc("GET /api/articles/full/{id}", h.GetArticleFullFilterID)
 	mux.HandleFunc("GET /api/articles/thumbnail/{id}", h.GetArticleThumbnail)
 	mux.HandleFunc("GET /api/articles/audio/{id}", h.GetArticleAudio)
 	mux.HandleFunc("DELETE /api/articles/{id}", h.DeleteArticle)

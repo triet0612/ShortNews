@@ -50,8 +50,7 @@ CREATE TABLE ArticleAudio(
 CREATE INDEX "INDEX_ARTICLE" ON "Article" (
 	"PubDate" DESC
 );
-INSERT INTO VoiceModel VALUES ("Vietnamese", "vi_VN/vais1000_low");
-INSERT INTO Config VALUES ("RSS-refresh-rate", "5");`
+INSERT INTO VoiceModel VALUES ("Vietnamese", "vi_VN/vais1000_low");`
 
 func GetInstance() *DBService {
 	_, err := os.Stat("./news.db")

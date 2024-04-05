@@ -24,17 +24,17 @@ func (a *AudioService) GenerateAudio() {
 		return
 	}
 	for _, article := range *articles {
-		id, sum, lang := article[0], article[1], article[2]
-
+		id, sum, lang, title := article[0], article[1], article[2], article[3]
 		cmd := exec.Command("mimic3", "--voice", lang)
-
 		stdin, err := cmd.StdinPipe()
 		if err != nil {
+			slog.Error(err.Error())
 			continue
 		}
-		_, err = io.WriteString(stdin, sum)
+		_, err = io.WriteString(stdin, title+"\n"+sum)
 		if err != nil {
 			slog.Warn(err.Error())
+			continue
 		}
 		stdin.Close()
 		cmd.Wait()
@@ -66,20 +66,20 @@ func (a *AudioService) updateArticleAudio(id string, audio []byte) error {
 func (a *AudioService) readArticleNoAudio() (*[][]string, error) {
 	ans := [][]string{}
 	rows, err := a.db.QueryContext(context.Background(),
-		`SELECT a1.ArticleID, a1.Summary, v.ModelName
+		`SELECT a1.ArticleID, a1.Summary, v.ModelName, a1.Title
 FROM Article a1 JOIN ArticleAudio a2 JOIN NewsSource n JOIN VoiceModel v
-ON v.Language=n.Language AND a1.ArticleID=a2.ArticleID AND a1.PublisherID = n.PublisherID`)
+ON v.Language=n.Language AND a1.ArticleID=a2.ArticleID AND a1.PublisherID=n.PublisherID AND a2.Audio=""`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		id, sum, lang := "", "", ""
-		if err := rows.Scan(&id, &sum, &lang); err != nil {
+		id, sum, lang, title := "", "", "", ""
+		if err := rows.Scan(&id, &sum, &lang, &title); err != nil {
 			slog.Warn(err.Error())
 			continue
 		}
-		ans = append(ans, []string{id, sum, lang})
+		ans = append(ans, []string{id, sum, lang, title})
 	}
 	if len(ans) == 0 {
 		return nil, errors.New("no items")
