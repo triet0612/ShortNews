@@ -1,5 +1,8 @@
 build_app:
-	rm -rf ./bin/ && mkdir ./bin/ && go build ./cmd/main.go && mv main ./bin
+	rm -rf ./bin/ && mkdir ./bin/ && go build ./cmd/main.go && mv main ./bin && make build_web
+
+build_web:
+	cd ./frontend && npm run build && mv build/ ../bin/
 
 run_app:
 	cd ./bin/ && ./main

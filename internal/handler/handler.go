@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"newscrapper/internal/config"
 	"newscrapper/internal/db"
+	"os"
 )
 
 type Handler struct {
@@ -16,7 +17,10 @@ func NewHandler(db *db.DBService, clock *config.Clock) *Handler {
 }
 
 func (h *Handler) Mount(mux *http.ServeMux) {
-	mux.HandleFunc("GET /", h.Home)
+	fs := os.DirFS("./build")
+	fileServer := http.FileServer(http.FS(fs))
+
+	mux.HandleFunc("GET /", fileServer.ServeHTTP)
 
 	mux.HandleFunc("GET /api/rss", h.GetRssSource)
 	mux.HandleFunc("POST /api/rss", h.CreateRssSource)
