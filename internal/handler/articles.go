@@ -18,6 +18,8 @@ import (
 func (h *Handler) GetArticles(w http.ResponseWriter, r *http.Request) {
 	limit := 1
 	start := 0
+	summary := ""
+	pubid := ""
 	queryParams := r.URL.Query()
 	var err error
 	if limit, err = strconv.Atoi(queryParams.Get("limit")); err != nil {
@@ -26,11 +28,27 @@ func (h *Handler) GetArticles(w http.ResponseWriter, r *http.Request) {
 	if start, err = strconv.Atoi(queryParams.Get("start")); err != nil {
 		start = 0
 	}
+	summary = queryParams.Get("summary")
+	pubid = queryParams.Get("PublisherID")
+	query := `SELECT * FROM Article WHERE 1=1`
+	if summary == "true" {
+		query += ` AND Summary != ""`
+	}
+	if pubid != "" {
+		query += ` AND PublisherID == @pubid`
+	} else {
+		query += ` AND PublisherID != @pubid`
+	}
+	query += ` ORDER BY datetime(PubDate) DESC LIMIT @limit OFFSET @offset`
 	articles := []model.Article{}
-	rows, err := h.db.QueryContext(context.Background(),
-		"SELECT * FROM Article ORDER BY datetime(PubDate) DESC LIMIT ? OFFSET ?",
-		limit, start,
-	)
+	ctx := context.Background()
+	stmt, err := h.db.PrepareContext(ctx, query)
+	if err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "error getting articles", http.StatusInternalServerError)
+		return
+	}
+	rows, err := stmt.QueryContext(ctx, sql.Named("pubid", pubid), sql.Named("limit", limit), sql.Named("offset", start))
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "error get article", http.StatusInternalServerError)

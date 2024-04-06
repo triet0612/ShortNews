@@ -20,7 +20,7 @@ test_rss_source2:
 
 test_rss_source3:
 	curl -i -X POST -H "Content-Type: application/json" \
-	-d '{"link":"https://abcnews.go.com/abcnews/topstories"}' localhost:8000/api/rss
+	-d '{"link":"https://abcnews.go.com/abcnews/topstories", "language":"English"}' localhost:8000/api/rss
 
 test_rss_source4:
 	curl -i -X POST -H "Content-Type: application/json" \

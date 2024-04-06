@@ -1,7 +1,6 @@
 import {api_url} from "./index.js"
 import { get } from "svelte/store"
 
-
 export class Article {
   /**
    * @param {string} id 
@@ -22,13 +21,14 @@ export class Article {
 }
 /**
  * @param {number} page 
+ * @param {string} pub
  * @returns {Promise<Article[]>}
  */
-export async function articleFromApi(page) {
+export async function articleFromApi(page, pub) {
   /**
    * @type {Array<any>}
    */
-  let jsResponse = await fetch(get(api_url) + `/articles?limit=5&start=${page*5}`)
+  let jsResponse = await fetch(get(api_url) + `/articles?limit=5&start=${page*5}&summary=true&PublisherID=${pub}`)
     .then(res => res.json())
     .catch(err => {console.log(err);return []})
   /**

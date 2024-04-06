@@ -18,7 +18,7 @@ export class NewsSource {
 /**
  * @returns {Promise<NewsSource[]>}
  */
-export async function NewsSourcefromURL() {
+export async function newsSourcefromURL() {
   /**
    * @type {Array<any>}
    */

@@ -57,6 +57,7 @@ func (h *Handler) CreateRssSource(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "cannot fetch feed", http.StatusInternalServerError)
+		return
 	}
 	src := &model.NewsSource{
 		PublisherID: uuid.NewString(),
