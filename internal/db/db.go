@@ -47,10 +47,11 @@ CREATE TABLE ArticleAudio(
 	ArticleID TEXT PRIMARY KEY NOT NULL,
 	Audio BLOB NOT NULL
 );
-CREATE INDEX "INDEX_ARTICLE" ON "Article" (
-	"PubDate" DESC
-);
-INSERT INTO VoiceModel VALUES ("Vietnamese", "vi_VN/vais1000_low");`
+-- CREATE INDEX "INDEX_ARTICLE" ON "Article" (
+	-- "PubDate" DESC
+-- );
+INSERT INTO VoiceModel VALUES ("Vietnamese", "vi_VN/vais1000_low");
+INSERT INTO VoiceModel VALUES ("English", "en_US/cmu-arctic_low");`
 
 func GetInstance() *DBService {
 	_, err := os.Stat("./news.db")

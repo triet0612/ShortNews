@@ -12,15 +12,47 @@ type Handler struct {
 	clock *config.Clock
 }
 
+type ExtendWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (w *ExtendWriter) Write(b []byte) (int, error) {
+	if w.statusCode == http.StatusNotFound {
+		return len(b), nil
+	}
+	if w.statusCode != 0 {
+		w.WriteHeader(w.statusCode)
+	}
+	return w.ResponseWriter.Write(b)
+
+}
+
+func (w *ExtendWriter) WriteHeader(statusCode int) {
+	if statusCode >= 300 && statusCode < 400 {
+		w.ResponseWriter.WriteHeader(statusCode)
+		return
+	}
+	w.statusCode = statusCode
+}
+
 func NewHandler(db *db.DBService, clock *config.Clock) *Handler {
 	return &Handler{db: db, clock: clock}
 }
 
 func (h *Handler) Mount(mux *http.ServeMux) {
-	fs := os.DirFS("./build")
-	fileServer := http.FileServer(http.FS(fs))
+	fsDir := os.DirFS("./build")
+	fileServer := http.FileServer(http.FS(fsDir))
 
-	mux.HandleFunc("GET /", fileServer.ServeHTTP)
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		ex := &ExtendWriter{ResponseWriter: w}
+		fileServer.ServeHTTP(ex, r)
+		if ex.statusCode == http.StatusNotFound {
+			r.URL.Path = "/"
+			w.Header().Set("Content-Type", "text/html")
+			fileServer.ServeHTTP(w, r)
+		}
+	})
 
 	mux.HandleFunc("GET /api/rss", h.GetRssSource)
 	mux.HandleFunc("POST /api/rss", h.CreateRssSource)
@@ -28,17 +60,11 @@ func (h *Handler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("DELETE /api/rss/{id}", h.DeleteRssSource)
 
 	mux.HandleFunc("GET /api/articles", h.GetArticles)
+	mux.HandleFunc("GET /api/articles/random", h.GetRandomArticle)
 	mux.HandleFunc("GET /api/articles/{id}", h.GetArticleFilterID)
+	mux.HandleFunc("DELETE /api/articles/{id}", h.DeleteArticle)
+
 	mux.HandleFunc("GET /api/articles/full/{id}", h.GetArticleFullFilterID)
 	mux.HandleFunc("GET /api/articles/thumbnail/{id}", h.GetArticleThumbnail)
 	mux.HandleFunc("GET /api/articles/audio/{id}", h.GetArticleAudio)
-	mux.HandleFunc("DELETE /api/articles/{id}", h.DeleteArticle)
-}
-
-func (h *Handler) Home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		http.NotFound(w, r)
-		return
-	}
-	w.Write([]byte("hello world"))
 }

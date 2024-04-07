@@ -17,7 +17,8 @@
             <a class=" btn btn-primary" href={article.link}>Go to site</a>
             <button on:click={() => {article=undefined}} class="text-4xl font-extrabold">✕</button>
         </div>
-        <embed src={$api_url+`/articles/full/${article.id}`} height="fit" class="w-full h-[90%]">
+        <!-- <embed src={$api_url+`/articles/full/${article.id}`} height="fit" class="w-full h-[90%]"> -->
+        <embed src={article.link} height="fit" class="w-full h-[90%]">
     </div>
 </div>
 {/if}

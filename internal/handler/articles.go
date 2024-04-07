@@ -224,3 +224,21 @@ func (h *Handler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error delete article", http.StatusInternalServerError)
 	}
 }
+
+func (h *Handler) GetRandomArticle(w http.ResponseWriter, r *http.Request) {
+	row := h.db.QueryRowContext(context.Background(),
+		`SELECT a.* FROM Article a JOIN ArticleAudio ar ON a.ArticleID=ar.ArticleID WHERE ar.Audio != "" ORDER BY RANDOM() LIMIT 1`)
+	a := model.Article{}
+	if err := row.Scan(
+		&a.ArticleID, &a.Link, &a.Title, &a.PubDate, &a.PublisherID, &a.Summary,
+	); err != nil {
+		slog.Error(err.Error())
+		http.Error(w, "error getting random articles", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(a); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

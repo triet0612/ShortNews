@@ -42,3 +42,16 @@ export async function articleFromApi(page, pub) {
   })
   return articles
 }
+/**
+ * @returns {Promise<Article>}
+ */
+export async function randomArticle() {
+  /**
+   * @type {any}
+   */
+  let js = await fetch(get(api_url) + `/articles/random`)
+    .then(res => res.json())
+    .catch(err => {console.log(err);return undefined})
+  let ans = new Article(js["ArticleID"], js["Link"], js["Title"], js["PubDate"], js["PublisherID"], js["Summary"])
+  return ans
+}

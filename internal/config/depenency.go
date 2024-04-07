@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"log"
 	"newscrapper/internal/db"
 	"time"
@@ -9,9 +10,10 @@ import (
 )
 
 type DI struct {
-	DbCon   *db.DBService
-	Llmodel *ollama.LLM
-	Clock   *Clock
+	DbCon     *db.DBService
+	Llmodel   *ollama.LLM
+	Clock     *Clock
+	LangAudio map[string]string
 }
 
 func InitDependency() *DI {
@@ -20,6 +22,14 @@ func InitDependency() *DI {
 	if err != nil {
 		log.Fatal(err)
 	}
+	vm := map[string]string{}
+	rows, _ := dbService.QueryContext(context.Background(), "SELECT * FROM VoiceModel")
+	for rows.Next() {
+		lang, modelName := "", ""
+		rows.Scan(&lang, &modelName)
+		vm[lang] = modelName
+	}
+
 	return &DI{
 		DbCon:   dbService,
 		Llmodel: llm,
@@ -27,6 +37,7 @@ func InitDependency() *DI {
 			Timer:    time.NewTimer(1 * time.Second),
 			PollRate: 1 * time.Hour,
 		},
+		LangAudio: vm,
 	}
 }
 

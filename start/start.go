@@ -27,8 +27,8 @@ func runHTTPServer(di *config.DI) {
 func runNewsService(di *config.DI) {
 	fetcher := service.NewRSSFetchService(di.DbCon)
 	thumbnail := service.NewThumbnailService(di.DbCon)
-	summary := service.NewSummarizeService(di.DbCon, di.Llmodel)
-	audio := service.NewAudioService(di.DbCon)
+	audio := service.NewAudioService(di.DbCon, di.LangAudio)
+	summary := service.NewSummarizeService(di.DbCon, di.Llmodel, audio)
 
 	for {
 		<-di.Clock.Timer.C

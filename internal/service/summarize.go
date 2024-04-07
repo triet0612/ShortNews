@@ -16,12 +16,13 @@ import (
 )
 
 type SummarizeService struct {
-	db  *db.DBService
-	llm *ollama.LLM
+	db    *db.DBService
+	llm   *ollama.LLM
+	audio *AudioService
 }
 
-func NewSummarizeService(db *db.DBService, llm *ollama.LLM) *SummarizeService {
-	return &SummarizeService{db: db, llm: llm}
+func NewSummarizeService(db *db.DBService, llm *ollama.LLM, audio *AudioService) *SummarizeService {
+	return &SummarizeService{db: db, llm: llm, audio: audio}
 }
 
 func (s *SummarizeService) ArticleSummarize() {
@@ -50,7 +51,8 @@ func (s *SummarizeService) ArticleSummarize() {
 			}
 			article.Summary += s.Text()
 		})
-		if article.Summary, err = s.llmSummarize(article.Summary, article.Ext["Language"].(string)); err != nil {
+		lang := article.Ext["Language"].(string)
+		if article.Summary, err = s.llmSummarize(article.Summary, lang); err != nil {
 			slog.Warn(err.Error())
 			continue
 		}
@@ -58,6 +60,12 @@ func (s *SummarizeService) ArticleSummarize() {
 			slog.Warn(err.Error())
 			continue
 		}
+		go func() {
+			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary, lang, article.Title); err != nil {
+				slog.Warn(err.Error())
+				return
+			}
+		}()
 	}
 }
 
@@ -90,7 +98,7 @@ ON a.PublisherID=n.PublisherID WHERE a.Summary = ''`,
 }
 
 func (s *SummarizeService) llmSummarize(doc string, language string) (string, error) {
-	doc = doc + "\n" + fmt.Sprintf(`Explain the above in one paragraph with %s language.`, language)
+	doc = doc + "\n" + fmt.Sprintf(`Explain the above in %s language.`, language)
 
 	ctx := context.Background()
 

@@ -1,14 +1,20 @@
-build_app:
-	rm -rf ./bin/ && mkdir ./bin/ && go build ./cmd/main.go && mv main ./bin && make build_web
+clean_bin:
+	rm -rf ./bin/ && mkdir ./bin/
+
+build_api:
+	go build ./cmd/main.go && mv main ./bin
 
 build_web:
 	cd ./frontend && npm run build && mv build/ ../bin/
 
-run_app:
+run_api:
 	cd ./bin/ && ./main
 
-run_debug:
-	make build_app && make run_app
+debug_api:
+	make build_api && make run_api
+
+run_full:
+	make clean_bin && make build_api && make build_web && make run_api
 
 test_rss_source1:
 	curl -i -X POST -H "Content-Type: application/json" \
