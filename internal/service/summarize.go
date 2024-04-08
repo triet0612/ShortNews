@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/db"
@@ -25,51 +26,54 @@ func NewSummarizeService(db *db.DBService, llm *ollama.LLM, audio *AudioService)
 	return &SummarizeService{db: db, llm: llm, audio: audio}
 }
 
-func (s *SummarizeService) ArticleSummarize() {
-	articles, err := s.readArticleNoSummary()
+func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
+	articles, err := s.ReadArticleNoSummary()
 	if err != nil {
 		slog.Warn(err.Error())
 		return
 	}
-
 	client := http.Client{Timeout: 10 * time.Second}
 	for _, article := range *articles {
-		res, err := client.Get(article.Link)
-		if err != nil {
-			slog.Warn(err.Error())
-			continue
-		}
-		doc, err := goquery.NewDocumentFromReader(res.Body)
-		if err != nil {
-			slog.Error(err.Error())
-			continue
-		}
-		article.Summary = ""
-		doc.Find("p").Each(func(i int, s *goquery.Selection) {
-			if i == 0 {
-				return
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			log.Println(article.Link)
+			res, err := client.Get(article.Link)
+			if err != nil {
+				slog.Warn(err.Error())
+				continue
 			}
-			article.Summary += s.Text()
-		})
-		lang := article.Ext["Language"].(string)
-		if article.Summary, err = s.llmSummarize(article.Summary, lang); err != nil {
-			slog.Warn(err.Error())
-			continue
-		}
-		if err := s.updateSummaryArticle(&article); err != nil {
-			slog.Warn(err.Error())
-			continue
-		}
-		go func() {
+			doc, err := goquery.NewDocumentFromReader(res.Body)
+			if err != nil {
+				slog.Error(err.Error())
+				continue
+			}
+			article.Summary = ""
+			doc.Find("p").Each(func(i int, s *goquery.Selection) {
+				if i == 0 {
+					return
+				}
+				article.Summary += s.Text()
+			})
+			lang := article.Ext["Language"].(string)
+			if article.Summary, err = s.llmSummarize(article.Summary, lang); err != nil {
+				slog.Warn(err.Error())
+				continue
+			}
+			if err := s.updateSummaryArticle(&article); err != nil {
+				slog.Warn(err.Error())
+				continue
+			}
 			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary, lang, article.Title); err != nil {
 				slog.Warn(err.Error())
 				return
 			}
-		}()
+		}
 	}
 }
 
-func (s *SummarizeService) readArticleNoSummary() (*[]model.Article, error) {
+func (s *SummarizeService) ReadArticleNoSummary() (*[]model.Article, error) {
 	ans := []model.Article{}
 	rows, err := s.db.QueryContext(
 		context.Background(),
@@ -98,11 +102,14 @@ ON a.PublisherID=n.PublisherID WHERE a.Summary = ''`,
 }
 
 func (s *SummarizeService) llmSummarize(doc string, language string) (string, error) {
-	doc = doc + "\n" + fmt.Sprintf(`Explain the above in %s language.`, language)
+	doc = doc + "\n" + fmt.Sprintf(`Explain the above in one paragraph with %s language.`, language)
 
 	ctx := context.Background()
 
-	textResponse, err := s.llm.Call(ctx, doc, llms.WithTemperature(0))
+	textResponse, err := s.llm.Call(ctx, doc,
+		llms.WithTemperature(1), llms.WithTopP(1), llms.WithMaxTokens(250),
+		llms.WithMaxLength(600), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
+	)
 
 	if err != nil {
 		return "", err

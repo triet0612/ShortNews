@@ -2,7 +2,6 @@
     import RandomArticle from "$lib/components/RandomArticle.svelte";
     import NavBar from "$lib/components/NavBar.svelte";
     import { onMount } from "svelte";
-    import Layout from "../+layout.svelte";
 
     /**
      * @type {boolean}

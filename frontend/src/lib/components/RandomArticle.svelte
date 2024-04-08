@@ -33,12 +33,12 @@
             </h1>
             <p class="h-[3%] badge badge-secondary my-3">
             {#if newsSrc.filter(data => data.pubID === article.pubid)[0] !== undefined}
-                {newsSrc.filter(data => data.pubID === article.pubid)[0].pub}                        
+                {newsSrc.filter(data => data.pubID === article.pubid)[0].link}                        
             {/if}
             </p>
-            <a class="btn bg-neutral h-[48%] w-full rounded-3xl" href={article.link}>
+            <button class="btn bg-neutral h-[48%] w-full rounded-3xl" on:click={()=> {window.open(article.link, '_blank')?.focus();}}>
                 <img class="h-[100%] w-[100%] object-fill" src={$api_url+`/articles/thumbnail/${article.id}`} alt={`image: ${article.title}`}/>
-            </a>
+            </button>
             <div class="relative p-4 h-[35%] overflow-y-scroll">
                 <p class="text-justify text-lg">{article.summary}</p>
             </div>

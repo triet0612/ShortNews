@@ -31,7 +31,6 @@ CREATE TABLE Thumbnail (
 );
 CREATE TABLE NewsSource (
 	PublisherID TEXT PRIMARY KEY NOT NULL,
-	Publisher TEXT UNIQUE NOT NULL,
 	Link TEXT NOT NULL,
 	Language TEXT NOT NULL
 );
@@ -47,11 +46,8 @@ CREATE TABLE ArticleAudio(
 	ArticleID TEXT PRIMARY KEY NOT NULL,
 	Audio BLOB NOT NULL
 );
--- CREATE INDEX "INDEX_ARTICLE" ON "Article" (
-	-- "PubDate" DESC
--- );
-INSERT INTO VoiceModel VALUES ("Vietnamese", "vi_VN/vais1000_low");
-INSERT INTO VoiceModel VALUES ("English", "en_US/cmu-arctic_low");`
+INSERT INTO VoiceModel VALUES ("vi", "vi_VN/vais1000_low");
+INSERT INTO VoiceModel VALUES ("en", "en_US/cmu-arctic_low");`
 
 func GetInstance() *DBService {
 	_, err := os.Stat("./news.db")

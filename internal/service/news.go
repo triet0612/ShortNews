@@ -23,7 +23,7 @@ func NewRSSFetchService(db *db.DBService) *RSSFetchService {
 	return &RSSFetchService{db: db}
 }
 
-func (r *RSSFetchService) NewsExtraction() {
+func (r *RSSFetchService) NewsExtraction(ctx context.Context) {
 	sourceList, err := r.db.ReadSourceRSS()
 	if err != nil {
 		slog.Warn(err.Error())
@@ -32,43 +32,48 @@ func (r *RSSFetchService) NewsExtraction() {
 	wg := sync.WaitGroup{}
 	articlepool := make(chan struct{}, runtime.NumCPU())
 	for _, source := range *sourceList {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		fp := gofeed.NewParser()
-		feed, err := fp.ParseURLWithContext(source.Link, ctx)
-		if err != nil {
-			slog.Error(err.Error())
-			continue
-		}
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			ctxTimeOut, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			fp := gofeed.NewParser()
+			feed, err := fp.ParseURLWithContext(source.Link, ctxTimeOut)
+			if err != nil {
+				slog.Error(err.Error())
+				continue
+			}
 
-		articlepool <- struct{}{}
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for _, article := range feed.Items {
-				a := model.Article{
-					ArticleID:   uuid.NewString(),
-					Link:        article.Link,
-					Title:       article.Title,
-					PubDate:     article.PublishedParsed,
-					PublisherID: source.PublisherID,
-				}
-				imageLink := ""
-				if article.Image != nil {
-					imageLink = (*article.Image).URL
-				} else {
-					a, ok := article.Extensions["media"]["thumbnail"]
-					if ok {
-						imageLink = a[0].Attrs["url"]
+			articlepool <- struct{}{}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for _, article := range feed.Items {
+					a := model.Article{
+						ArticleID:   uuid.NewString(),
+						Link:        article.Link,
+						Title:       article.Title,
+						PubDate:     article.PublishedParsed,
+						PublisherID: source.PublisherID,
+					}
+					imageLink := ""
+					if article.Image != nil {
+						imageLink = (*article.Image).URL
+					} else {
+						a, ok := article.Extensions["media"]["thumbnail"]
+						if ok {
+							imageLink = a[0].Attrs["url"]
+						}
+					}
+					if err := r.insertArticle(&a, imageLink); err != nil {
+						slog.Info(err.Error())
+						continue
 					}
 				}
-				if err := r.insertArticle(&a, imageLink); err != nil {
-					slog.Info(err.Error())
-					continue
-				}
-			}
-			<-articlepool
-		}()
+				<-articlepool
+			}()
+		}
 	}
 	wg.Wait()
 }

@@ -12,7 +12,7 @@
         <select class="select bg-gray-300 text-black text-xl" bind:value={src_filter}>
             <option selected value="">Filter</option>
             {#each src_list as news_src}
-            <option value={news_src.pubID}>{news_src.pub}</option>
+            <option value={news_src.pubID}>{news_src.link}</option>
             {/each}
         </select>
         <h1 class="text-4xl w-1/4 font-extrabold">Home Page</h1>

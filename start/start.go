@@ -1,11 +1,13 @@
 package start
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"newscrapper/internal/config"
 	"newscrapper/internal/handler"
 	"newscrapper/internal/service"
+	"sync"
 )
 
 func RunServices(di *config.DI) {
@@ -14,7 +16,7 @@ func RunServices(di *config.DI) {
 }
 
 func runHTTPServer(di *config.DI) {
-	h := handler.NewHandler(di.DbCon, di.Clock)
+	h := handler.NewHandler(di.DbCon, di.Clock, di.Signal)
 	mux := http.NewServeMux()
 	h.Mount(mux)
 	server := http.Server{
@@ -30,12 +32,26 @@ func runNewsService(di *config.DI) {
 	audio := service.NewAudioService(di.DbCon, di.LangAudio)
 	summary := service.NewSummarizeService(di.DbCon, di.Llmodel, audio)
 
+	ctx, cancel := context.WithCancel(context.Background())
+
+	wg := sync.WaitGroup{}
 	for {
-		<-di.Clock.Timer.C
-		di.Clock.Timeout()
-		fetcher.NewsExtraction()
-		go thumbnail.UpdateThumbnail()
-		summary.ArticleSummarize()
-		go audio.GenerateAudio()
+		select {
+		case <-di.Clock.Timer.C:
+			di.Clock.Timeout()
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				fetcher.NewsExtraction(ctx)
+				go thumbnail.UpdateThumbnail(ctx)
+				summary.ArticleSummarize(ctx)
+				go audio.GenerateAudio(ctx)
+			}()
+		case <-di.Signal:
+			cancel()
+			wg.Wait()
+			ctx, cancel = context.WithCancel(context.Background())
+			di.Clock.Sync()
+		}
 	}
 }

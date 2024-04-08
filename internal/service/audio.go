@@ -18,20 +18,23 @@ func NewAudioService(db *db.DBService, langAudio map[string]string) *AudioServic
 	return &AudioService{db: db, langAudio: langAudio}
 }
 
-func (a *AudioService) GenerateAudio() {
+func (a *AudioService) GenerateAudio(ctx context.Context) {
 	articles, err := a.readArticleNoAudio()
 	if err != nil {
 		slog.Error(err.Error())
 		return
 	}
 	for _, article := range *articles {
-		go func() {
+		select {
+		case <-ctx.Done():
+			return
+		default:
 			id, sum, lang, title := article[0], article[1], article[2], article[3]
 			if err = a.updateArticleAudio(id, sum, lang, title); err != nil {
 				slog.Error(err.Error())
 				return
 			}
-		}()
+		}
 	}
 }
 

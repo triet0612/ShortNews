@@ -35,7 +35,7 @@
                 <h2 class="card-title">{article.title}</h2>
                 <p class="badge badge-secondary">
                 {#if newsSrc.filter(data => data.pubID === article.pubid)[0] !== undefined}
-                    {newsSrc.filter(data => data.pubID === article.pubid)[0].pub}                        
+                    {newsSrc.filter(data => data.pubID === article.pubid)[0].link}                        
                 {/if}
                 </p>
                 <p class="pt-5 text-justify">{article.summary}</p>

@@ -6,7 +6,6 @@ import (
 
 type NewsSource struct {
 	PublisherID string
-	Publisher   string
 	Link        string
 	Language    string
 	Ext         map[string]interface{}

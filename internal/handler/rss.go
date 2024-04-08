@@ -8,10 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"newscrapper/internal/model"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/mmcdole/gofeed"
 )
 
 func (h *Handler) GetRssSource(w http.ResponseWriter, r *http.Request) {
@@ -50,51 +48,24 @@ func (h *Handler) CreateRssSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "POST /api/rss error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	fp := gofeed.NewParser()
-	feed, err := fp.ParseURLWithContext(url.String(), ctx)
-	if err != nil {
-		slog.Error(err.Error())
-		http.Error(w, "cannot fetch feed", http.StatusInternalServerError)
-		return
-	}
 	src := &model.NewsSource{
 		PublisherID: uuid.NewString(),
-		Publisher:   feed.Title,
 		Link:        url.String(),
 		Language:    lang,
 	}
 	if _, err := h.db.ExecContext(context.Background(),
-		"INSERT INTO NewsSource VALUES (?, ?, ?, ?)",
-		src.PublisherID, src.Publisher, src.Link, src.Language,
+		"INSERT INTO NewsSource VALUES (?, ?, ?)",
+		src.PublisherID, src.Link, src.Language,
 	); err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "error create rss source", http.StatusInternalServerError)
 		return
 	}
-	h.clock.Sync()
-}
-
-func (h *Handler) UpdateRssSource(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-	src := model.NewsSource{}
-	if err := json.NewDecoder(r.Body).Decode(&src); err != nil {
-		http.Error(w, "unable to decode body", http.StatusBadRequest)
-		return
-	}
-	if _, err := h.db.ExecContext(context.Background(),
-		"UPDATE NewsSource SET Link=?, Language=?, Publisher=? WHERE PublisherID=?",
-		src.Link, src.Language, src.Publisher, src.PublisherID,
-	); err != nil {
-		slog.Error(err.Error())
-		http.Error(w, "error update rss", http.StatusInternalServerError)
-		return
-	}
-	h.clock.Sync()
+	h.signal <- struct{}{}
 }
 
 func (h *Handler) DeleteRssSource(w http.ResponseWriter, r *http.Request) {
+
 	id := r.PathValue("id")
 	if err := uuid.Validate(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -140,5 +111,5 @@ SELECT ArticleID FROM Article WHERE PublisherID=?);`, id); err != nil {
 		tx.Rollback()
 		http.Error(w, "error delete rss", http.StatusInternalServerError)
 	}
-	h.clock.Sync()
+	h.signal <- struct{}{}
 }

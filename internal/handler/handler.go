@@ -8,8 +8,9 @@ import (
 )
 
 type Handler struct {
-	db    *db.DBService
-	clock *config.Clock
+	db     *db.DBService
+	clock  *config.Clock
+	signal chan struct{}
 }
 
 type ExtendWriter struct {
@@ -36,8 +37,8 @@ func (w *ExtendWriter) WriteHeader(statusCode int) {
 	w.statusCode = statusCode
 }
 
-func NewHandler(db *db.DBService, clock *config.Clock) *Handler {
-	return &Handler{db: db, clock: clock}
+func NewHandler(db *db.DBService, clock *config.Clock, signal chan struct{}) *Handler {
+	return &Handler{db: db, clock: clock, signal: signal}
 }
 
 func (h *Handler) Mount(mux *http.ServeMux) {
@@ -56,7 +57,6 @@ func (h *Handler) Mount(mux *http.ServeMux) {
 
 	mux.HandleFunc("GET /api/rss", h.GetRssSource)
 	mux.HandleFunc("POST /api/rss", h.CreateRssSource)
-	mux.HandleFunc("PUT /api/rss", h.UpdateRssSource)
 	mux.HandleFunc("DELETE /api/rss/{id}", h.DeleteRssSource)
 
 	mux.HandleFunc("GET /api/articles", h.GetArticles)

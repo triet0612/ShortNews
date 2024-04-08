@@ -13,6 +13,7 @@ type DI struct {
 	DbCon     *db.DBService
 	Llmodel   *ollama.LLM
 	Clock     *Clock
+	Signal    chan struct{}
 	LangAudio map[string]string
 }
 
@@ -38,6 +39,7 @@ func InitDependency() *DI {
 			PollRate: 1 * time.Hour,
 		},
 		LangAudio: vm,
+		Signal:    make(chan struct{}),
 	}
 }
 

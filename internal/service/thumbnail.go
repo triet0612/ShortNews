@@ -17,7 +17,7 @@ func NewThumbnailService(db *db.DBService) *ThumbnailService {
 	return &ThumbnailService{db: db}
 }
 
-func (t *ThumbnailService) UpdateThumbnail() {
+func (t *ThumbnailService) UpdateThumbnail(ctx context.Context) {
 	articles, err := t.readArticleNoThumbnail()
 	if err != nil {
 		slog.Warn(err.Error())
@@ -25,20 +25,25 @@ func (t *ThumbnailService) UpdateThumbnail() {
 	}
 	client := http.Client{Timeout: 10 * time.Second}
 	for _, a := range *articles {
-		id, imageUrl := a[0], a[1]
-		res, err := client.Get(imageUrl)
-		if err != nil {
-			slog.Warn(err.Error())
-			continue
-		}
-		defer res.Body.Close()
-		img, err := io.ReadAll(res.Body)
-		if err != nil {
-			slog.Warn(err.Error())
-			continue
-		}
-		if err := t.updateArticleThumbnail(id, img); err != nil {
-			slog.Warn(err.Error())
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			id, imageUrl := a[0], a[1]
+			res, err := client.Get(imageUrl)
+			if err != nil {
+				slog.Warn(err.Error())
+				continue
+			}
+			defer res.Body.Close()
+			img, err := io.ReadAll(res.Body)
+			if err != nil {
+				slog.Warn(err.Error())
+				continue
+			}
+			if err := t.updateArticleThumbnail(id, img); err != nil {
+				slog.Warn(err.Error())
+			}
 		}
 	}
 }
