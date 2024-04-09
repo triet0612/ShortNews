@@ -6,7 +6,7 @@
 
 <div class="flex flex-col w-full h-screen">
     <div class="grid card h-[10%]">
-        <NavBar page_name="Shorts"/>
+        <NavBar page_name="RSS sources"/>
     </div>
     <div class="h-[90%] w-full flex">
         <div class="w-1/2 fill-black">

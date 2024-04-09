@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/db"
@@ -36,9 +35,9 @@ func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
 	for _, article := range *articles {
 		select {
 		case <-ctx.Done():
+			slog.Info("Ending Article Summary")
 			return
 		default:
-			log.Println(article.Link)
 			res, err := client.Get(article.Link)
 			if err != nil {
 				slog.Warn(err.Error())

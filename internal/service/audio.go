@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"newscrapper/internal/db"
 	"os/exec"
+	"strings"
 )
 
 type AudioService struct {
@@ -27,6 +27,7 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 	for _, article := range *articles {
 		select {
 		case <-ctx.Done():
+			slog.Info("Ending GenerateAudio")
 			return
 		default:
 			id, sum, lang, title := article[0], article[1], article[2], article[3]
@@ -40,29 +41,20 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 
 func (a *AudioService) updateArticleAudio(id string, sum string, lang string, title string) error {
 	cmd := exec.Command("mimic3", "--voice", a.langAudio[lang])
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		slog.Error(err.Error())
-		return err
-	}
-	_, err = io.WriteString(stdin, title+"\n"+sum)
+	cmd.Stdin = strings.NewReader(title + "\n" + sum)
+	var out strings.Builder
+	cmd.Stdout = &out
+	err := cmd.Run()
 	if err != nil {
 		slog.Warn(err.Error())
 		return err
 	}
-	stdin.Close()
-	cmd.Wait()
-	out, err := cmd.Output()
-	if err != nil {
-		slog.Warn(err.Error())
-		return err
-	}
-	if len(out) == 0 {
+	if out.Len() == 0 {
 		return nil
 	}
 	if _, err := a.db.ExecContext(context.Background(),
-		"UPDATE ArticleAudio SET Audio = ? WHERE ArticleID = ?",
-		out, id,
+		"UPDATE ArticleAudio SET Audio=? WHERE ArticleID=?",
+		out.String(), id,
 	); err != nil {
 		return err
 	}

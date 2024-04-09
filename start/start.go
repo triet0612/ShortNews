@@ -28,12 +28,10 @@ func runHTTPServer(di *config.DI) {
 
 func runNewsService(di *config.DI) {
 	fetcher := service.NewRSSFetchService(di.DbCon)
-	thumbnail := service.NewThumbnailService(di.DbCon)
 	audio := service.NewAudioService(di.DbCon, di.LangAudio)
 	summary := service.NewSummarizeService(di.DbCon, di.Llmodel, audio)
 
 	ctx, cancel := context.WithCancel(context.Background())
-
 	wg := sync.WaitGroup{}
 	for {
 		select {
@@ -43,7 +41,6 @@ func runNewsService(di *config.DI) {
 			go func() {
 				defer wg.Done()
 				fetcher.NewsExtraction(ctx)
-				go thumbnail.UpdateThumbnail(ctx)
 				summary.ArticleSummarize(ctx)
 				go audio.GenerateAudio(ctx)
 			}()

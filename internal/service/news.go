@@ -98,8 +98,8 @@ func (r *RSSFetchService) insertArticle(a *model.Article, imageUrl string) error
 		return nil
 	}
 	if _, err := r.db.ExecContext(ctx,
-		"INSERT INTO Thumbnail VALUES (?, ?, ?)",
-		a.ArticleID, imageUrl, "",
+		"INSERT INTO Thumbnail VALUES (?, ?)",
+		a.ArticleID, imageUrl,
 	); err != nil {
 		return err
 	}

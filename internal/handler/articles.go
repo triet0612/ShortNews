@@ -5,17 +5,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/model"
 	"strconv"
-	"time"
 
 	"github.com/google/uuid"
 )
 
-func (h *Handler) GetArticles(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetArticle(w http.ResponseWriter, r *http.Request) {
 	limit := 1
 	start := 0
 	summary := ""
@@ -101,51 +99,15 @@ func (h *Handler) GetArticleFilterID(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) GetArticleFullFilterID(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	if err := uuid.Validate(id); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	link := ""
-	row := h.db.QueryRowContext(context.Background(),
-		"SELECT Link FROM Article WHERE ArticleID=?", id)
-	if err := row.Scan(&link); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.Error(w, "error no article", http.StatusNotFound)
-			return
-		}
-		slog.Error(err.Error())
-		http.Error(w, "error get articles", http.StatusInternalServerError)
-		return
-	}
-	client := http.Client{Timeout: 10 * time.Second}
-	res, err := client.Get(link)
-	if err != nil {
-		slog.Error(err.Error())
-		http.Error(w, "get article error", http.StatusInternalServerError)
-		return
-	}
-	defer res.Body.Close()
-	ans, err := io.ReadAll(res.Body)
-	if err != nil {
-		slog.Error(err.Error())
-		http.Error(w, "error decode body", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Content-Type", "text/html")
-	w.Write(ans)
-}
-
 func (h *Handler) GetArticleThumbnail(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	if err := uuid.Validate(id); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	ans := []byte{}
+	ans := ""
 	row := h.db.QueryRowContext(context.Background(),
-		"SELECT Image FROM Thumbnail WHERE ArticleID=?", id)
+		"SELECT URL FROM Thumbnail WHERE ArticleID=?", id)
 	if err := row.Scan(&ans); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "no image", http.StatusNotFound)
@@ -155,11 +117,7 @@ func (h *Handler) GetArticleThumbnail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "error get thumbnail", http.StatusInternalServerError)
 		return
 	}
-	if len(ans) == 0 {
-		http.Error(w, "no image", http.StatusNotFound)
-		return
-	}
-	w.Write(ans)
+	http.Redirect(w, r, ans, http.StatusTemporaryRedirect)
 }
 
 func (h *Handler) GetArticleAudio(w http.ResponseWriter, r *http.Request) {

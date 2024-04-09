@@ -59,12 +59,11 @@ func (h *Handler) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/rss", h.CreateRssSource)
 	mux.HandleFunc("DELETE /api/rss/{id}", h.DeleteRssSource)
 
-	mux.HandleFunc("GET /api/articles", h.GetArticles)
+	mux.HandleFunc("GET /api/articles", h.GetArticle)
 	mux.HandleFunc("GET /api/articles/random", h.GetRandomArticle)
 	mux.HandleFunc("GET /api/articles/{id}", h.GetArticleFilterID)
 	mux.HandleFunc("DELETE /api/articles/{id}", h.DeleteArticle)
 
-	mux.HandleFunc("GET /api/articles/full/{id}", h.GetArticleFullFilterID)
 	mux.HandleFunc("GET /api/articles/thumbnail/{id}", h.GetArticleThumbnail)
 	mux.HandleFunc("GET /api/articles/audio/{id}", h.GetArticleAudio)
 }
