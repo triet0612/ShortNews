@@ -20,5 +20,9 @@
 # Go workspace file
 go.work
 
-bin/
+bin/build
+
+*.db
 .venv/
+*.bin
+*.gguf

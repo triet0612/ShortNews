@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/db"
 	"newscrapper/internal/model"
+	"os/exec"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -21,8 +24,39 @@ type SummarizeService struct {
 	audio *AudioService
 }
 
-func NewSummarizeService(db *db.DBService, llm *ollama.LLM, audio *AudioService) *SummarizeService {
+func NewSummarizeService(db *db.DBService, audio *AudioService) *SummarizeService {
+	hostOllama()
+	llm, err := ollama.New(ollama.WithModel("model"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	return &SummarizeService{db: db, llm: llm, audio: audio}
+}
+
+func hostOllama() {
+	res, err := http.Get("http://localhost:11434")
+	if err == nil && res.StatusCode == 200 {
+		slog.Info("ollama started")
+	} else {
+		slog.Info("waiting to start ollama")
+		go exec.Command("ollama", "serve").Run()
+		for {
+			res, err := http.Get("http://localhost:11434")
+			if err != nil {
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			if res.StatusCode == 200 {
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+	slog.Info("ollama start, creating model")
+	if err := exec.Command("ollama", "create", "model", "-f", "./llm/Modelfile").Run(); err != nil {
+		log.Fatal(err)
+	}
+	slog.Info("create model complete")
 }
 
 func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
@@ -77,7 +111,7 @@ func (s *SummarizeService) ReadArticleNoSummary() (*[]model.Article, error) {
 	rows, err := s.db.QueryContext(
 		context.Background(),
 		`SELECT a.*, n.Language FROM Article a JOIN NewsSource n
-ON a.PublisherID=n.PublisherID WHERE a.Summary = ''`,
+	ON a.PublisherID=n.PublisherID WHERE a.Summary = '' ORDER BY a.PubDate DESC`,
 	)
 	if err != nil {
 		return nil, err
@@ -101,18 +135,23 @@ ON a.PublisherID=n.PublisherID WHERE a.Summary = ''`,
 }
 
 func (s *SummarizeService) llmSummarize(doc string, language string) (string, error) {
-	doc = doc + "\n" + fmt.Sprintf(`Explain the above in one paragraph with %s language.`, language)
+	doc = cleanText(doc)
+	prompt := `Can you provide a comprehensive summary of the given text? The summary should cover all the key points and main ideas presented in the original text, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. The length of the summary should be appropriate for the length and complexity of the original text, providing a clear and accurate overview without omitting any important information.`
+	if language == "vi" {
+		prompt = "Bạn có thể  tóm tắt văn bản trên? Tóm tắt nên bao gồm những thông tin chính trong văn bản gốc và cô đọng những thông tin đó một cách dễ hiểu và ngắn gọn. Hãy đảm bảo những chi tiết quan trọng theo ý của tác giả và tránh những thông tin không cần thiết hay lặp lại. Độ dài nên phù hợp với độ dài và độ phức tạp của văn bản gốc, giữ các thông tin chính xác và ngắn gọn mà không loại bỏ những thông tin quan trọng."
+	}
+	doc = doc + "\n\n" + prompt
 
 	ctx := context.Background()
 
 	textResponse, err := s.llm.Call(ctx, doc,
-		llms.WithTemperature(1), llms.WithTopP(1), llms.WithMaxTokens(250),
+		llms.WithTemperature(0), llms.WithTopP(1), llms.WithMaxTokens(250),
 		llms.WithMaxLength(600), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
 	)
-
 	if err != nil {
 		return "", err
 	}
+	textResponse = cleanText(textResponse)
 	return textResponse, nil
 }
 
@@ -124,4 +163,13 @@ func (s *SummarizeService) updateSummaryArticle(article *model.Article) error {
 		return err
 	}
 	return nil
+}
+
+func cleanText(doc string) string {
+	re := regexp.MustCompile(`\*\*.+\*\*`)
+	doc = re.ReplaceAllString(doc, "")
+	re = regexp.MustCompile(`[\[\];'":<>/|\\=+\-_()*&^%$#@!~]`)
+	doc = re.ReplaceAllString(doc, " ")
+	doc = strings.Trim(doc, " ")
+	return doc
 }

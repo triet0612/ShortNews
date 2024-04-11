@@ -11,16 +11,17 @@ import (
 )
 
 func RunServices(di *config.DI) {
-	go runHTTPServer(di)
-	runNewsService(di)
+	go runNewsService(di)
+	runHTTPServer(di)
 }
 
 func runHTTPServer(di *config.DI) {
+	log.Println("start http server")
 	h := handler.NewHandler(di.DbCon, di.Clock, di.Signal)
 	mux := http.NewServeMux()
 	h.Mount(mux)
 	server := http.Server{
-		Addr:    "localhost:8000",
+		Addr:    ":8000",
 		Handler: mux,
 	}
 	log.Fatal(server.ListenAndServe())
@@ -28,8 +29,8 @@ func runHTTPServer(di *config.DI) {
 
 func runNewsService(di *config.DI) {
 	fetcher := service.NewRSSFetchService(di.DbCon)
-	audio := service.NewAudioService(di.DbCon, di.LangAudio)
-	summary := service.NewSummarizeService(di.DbCon, di.Llmodel, audio)
+	audio := service.NewAudioService(di.DbCon)
+	summary := service.NewSummarizeService(di.DbCon, audio)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}

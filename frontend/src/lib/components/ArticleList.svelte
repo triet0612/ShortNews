@@ -1,7 +1,7 @@
 <script>
     import { Article, articleFromApi } from "$lib/article";
     import { api_url } from "$lib";
-    import { NewsSource, newsSourcefromURL } from "$lib/rss";
+    import { newsSourcefromURL } from "$lib/rss";
     /**
      * @type {Article | undefined}
      */
@@ -22,9 +22,9 @@
         </div>
     </div>
     <div class="grid h-[90%] overflow-y-scroll gap-5">
-    {#await articleFromApi(cur_page, pub)}
+    {#await articleFromApi(10, cur_page, pub, true)}
         wait
-    {:then articles} 
+    {:then articles}
         {#each articles as article}
         <div aria-hidden="true" class="card card-side bg-neutral sm:w-full lg:w-3/4 justify-center mx-auto btn-ghost" 
             on:click={() => {clickedArticle=article}}>

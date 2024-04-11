@@ -16,8 +16,7 @@ import (
 func (h *Handler) GetArticle(w http.ResponseWriter, r *http.Request) {
 	limit := 1
 	start := 0
-	summary := ""
-	pubid := ""
+	summary, audio, pubid := "", "", ""
 	queryParams := r.URL.Query()
 	var err error
 	if limit, err = strconv.Atoi(queryParams.Get("limit")); err != nil {
@@ -27,8 +26,12 @@ func (h *Handler) GetArticle(w http.ResponseWriter, r *http.Request) {
 		start = 0
 	}
 	summary = queryParams.Get("summary")
+	audio = queryParams.Get("audio")
 	pubid = queryParams.Get("PublisherID")
 	query := `SELECT * FROM Article WHERE 1=1`
+	if audio == "true" {
+		query += ` AND ArticleID IN (SELECT ArticleID FROM ArticleAudio WHERE Audio != "")`
+	}
 	if summary == "true" {
 		query += ` AND Summary != ""`
 	}
@@ -180,23 +183,5 @@ func (h *Handler) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	if err := tx.Commit(); err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "error delete article", http.StatusInternalServerError)
-	}
-}
-
-func (h *Handler) GetRandomArticle(w http.ResponseWriter, r *http.Request) {
-	row := h.db.QueryRowContext(context.Background(),
-		`SELECT a.* FROM Article a JOIN ArticleAudio ar ON a.ArticleID=ar.ArticleID WHERE ar.Audio != "" ORDER BY RANDOM() LIMIT 1`)
-	a := model.Article{}
-	if err := row.Scan(
-		&a.ArticleID, &a.Link, &a.Title, &a.PubDate, &a.PublisherID, &a.Summary,
-	); err != nil {
-		slog.Error(err.Error())
-		http.Error(w, "error getting random articles", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(a); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }

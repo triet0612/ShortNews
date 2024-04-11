@@ -20,15 +20,19 @@ export class Article {
   }
 }
 /**
+ * @param {number} limit
  * @param {number} page 
  * @param {string} pub
+ * @param {boolean} sum
+ * @param {boolean} audio
  * @returns {Promise<Article[]>}
  */
-export async function articleFromApi(page, pub) {
+export async function articleFromApi(limit, page, pub, sum, audio) {
   /**
    * @type {Array<any>}
    */
-  let jsResponse = await fetch(get(api_url) + `/articles?limit=5&start=${page*5}&summary=true&PublisherID=${pub}`)
+  let jsResponse = await fetch(get(api_url)+
+    `/articles?limit=${limit}&start=${page*limit}&PublisherID=${pub}&summary=${sum}&audio=${audio}`)
     .then(res => res.json())
     .catch(err => {console.log(err);return []})
   /**
@@ -40,18 +44,9 @@ export async function articleFromApi(page, pub) {
       v["ArticleID"], v["Link"], v["Title"], v["PubDate"], v["PublisherID"], v["Summary"]
     ))
   })
+  if (articles.length === 0 && page > 0) {
+    location.reload()
+    return []
+  }
   return articles
-}
-/**
- * @returns {Promise<Article>}
- */
-export async function randomArticle() {
-  /**
-   * @type {any}
-   */
-  let js = await fetch(get(api_url) + `/articles/random`)
-    .then(res => res.json())
-    .catch(err => {console.log(err);return undefined})
-  let ans = new Article(js["ArticleID"], js["Link"], js["Title"], js["PubDate"], js["PublisherID"], js["Summary"])
-  return ans
 }

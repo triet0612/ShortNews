@@ -1,45 +1,27 @@
 package config
 
 import (
-	"context"
-	"log"
 	"newscrapper/internal/db"
 	"time"
-
-	"github.com/tmc/langchaingo/llms/ollama"
 )
 
 type DI struct {
-	DbCon     *db.DBService
-	Llmodel   *ollama.LLM
-	Clock     *Clock
-	Signal    chan struct{}
-	LangAudio map[string]string
+	DbCon  *db.DBService
+	Clock  *Clock
+	Signal chan struct{}
+	Config map[string]string
 }
 
 func InitDependency() *DI {
 	dbService := db.GetInstance()
-	llm, err := ollama.New(ollama.WithModel("gemma:2b"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	vm := map[string]string{}
-	rows, _ := dbService.QueryContext(context.Background(), "SELECT * FROM VoiceModel")
-	for rows.Next() {
-		lang, modelName := "", ""
-		rows.Scan(&lang, &modelName)
-		vm[lang] = modelName
-	}
 
 	return &DI{
-		DbCon:   dbService,
-		Llmodel: llm,
+		DbCon: dbService,
 		Clock: &Clock{
 			Timer:    time.NewTimer(1 * time.Second),
 			PollRate: 1 * time.Hour,
 		},
-		LangAudio: vm,
-		Signal:    make(chan struct{}),
+		Signal: make(chan struct{}),
 	}
 }
 

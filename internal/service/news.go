@@ -50,6 +50,7 @@ func (r *RSSFetchService) NewsExtraction(ctx context.Context) {
 			go func() {
 				defer wg.Done()
 				for _, article := range feed.Items {
+
 					a := model.Article{
 						ArticleID:   uuid.NewString(),
 						Link:        article.Link,
@@ -57,13 +58,17 @@ func (r *RSSFetchService) NewsExtraction(ctx context.Context) {
 						PubDate:     article.PublishedParsed,
 						PublisherID: source.PublisherID,
 					}
+					if article.PublishedParsed == nil {
+						t := time.Now()
+						a.PubDate = &t
+					}
 					imageLink := ""
 					if article.Image != nil {
 						imageLink = (*article.Image).URL
 					} else {
-						a, ok := article.Extensions["media"]["thumbnail"]
+						temp, ok := article.Extensions["media"]["thumbnail"]
 						if ok {
-							imageLink = a[0].Attrs["url"]
+							imageLink = temp[0].Attrs["url"]
 						}
 					}
 					if err := r.insertArticle(&a, imageLink); err != nil {
