@@ -50,7 +50,6 @@ func (r *RSSFetchService) NewsExtraction(ctx context.Context) {
 			go func() {
 				defer wg.Done()
 				for _, article := range feed.Items {
-
 					a := model.Article{
 						ArticleID:   uuid.NewString(),
 						Link:        article.Link,
@@ -61,6 +60,9 @@ func (r *RSSFetchService) NewsExtraction(ctx context.Context) {
 					if article.PublishedParsed == nil {
 						t := time.Now()
 						a.PubDate = &t
+					}
+					if time.Since(*a.PubDate) > 48*time.Hour {
+						continue
 					}
 					imageLink := ""
 					if article.Image != nil {

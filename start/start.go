@@ -31,6 +31,7 @@ func runNewsService(di *config.DI) {
 	fetcher := service.NewRSSFetchService(di.DbCon)
 	audio := service.NewAudioService(di.DbCon)
 	summary := service.NewSummarizeService(di.DbCon, audio)
+	cleanup := service.NewDBCleanUp(di.DbCon)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	wg := sync.WaitGroup{}
@@ -41,6 +42,7 @@ func runNewsService(di *config.DI) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
+				go cleanup.CleanOldArticle(ctx)
 				fetcher.NewsExtraction(ctx)
 				summary.ArticleSummarize(ctx)
 				go audio.GenerateAudio(ctx)
