@@ -20,7 +20,7 @@
     {:then article}
     {#each article as a}
     <div class="bg-neutral h-[100%] p-5 rounded-3xl mx-auto justify-center">
-        <h1 class="h-[5%] text-xl font-bold text-nowrap overflow-hidden hover:overflow-scroll"
+        <h1 class="h-[5%] text-lg font-bold text-nowrap overflow-hidden hover:overflow-scroll"
             on:wheel={scrollLeftRight} bind:this={titleElem}>
             {a.title}
         </h1>
