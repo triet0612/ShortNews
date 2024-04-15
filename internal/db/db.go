@@ -45,10 +45,9 @@ INSERT INTO VoiceModel VALUES ("vi", "vi_VN-vais1000-medium");
 INSERT INTO VoiceModel VALUES ("en", " en_US-ryan-low");`
 
 func GetInstance() *DBService {
-	os.Mkdir("temp", os.ModeDir)
-	_, err := os.Stat("./data/news.db")
+	_, err := os.Stat("./news.db")
 	not_exist := errors.Is(err, os.ErrNotExist)
-	db, err := sql.Open("sqlite3", "./data/news.db")
+	db, err := sql.Open("sqlite3", "./news.db")
 	if err != nil {
 		log.Panic(fmt.Errorf("GetInstance error: %s", err))
 	}
