@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"newscrapper/internal/db"
 	"newscrapper/internal/model"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -25,38 +24,11 @@ type SummarizeService struct {
 }
 
 func NewSummarizeService(db *db.DBService, audio *AudioService) *SummarizeService {
-	hostOllama()
-	llm, err := ollama.New(ollama.WithModel("model"))
+	llm, err := ollama.New(ollama.WithModel("gemma:2b-instruct-v1.1-q4_0"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	return &SummarizeService{db: db, llm: llm, audio: audio}
-}
-
-func hostOllama() {
-	res, err := http.Get("http://localhost:11434")
-	if err == nil && res.StatusCode == 200 {
-		slog.Info("ollama started")
-	} else {
-		slog.Info("waiting to start ollama")
-		go exec.Command("ollama", "serve").Run()
-		for {
-			res, err := http.Get("http://localhost:11434")
-			if err != nil {
-				time.Sleep(5 * time.Second)
-				continue
-			}
-			if res.StatusCode == 200 {
-				break
-			}
-			time.Sleep(5 * time.Second)
-		}
-	}
-	slog.Info("ollama start, creating model")
-	if err := exec.Command("ollama", "create", "model", "-f", "./llm/Modelfile").Run(); err != nil {
-		log.Fatal(err)
-	}
-	slog.Info("create model complete")
 }
 
 func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
@@ -100,7 +72,7 @@ func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
 			}
 			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary, lang, article.Title); err != nil {
 				slog.Warn(err.Error())
-				return
+				continue
 			}
 		}
 	}

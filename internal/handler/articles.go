@@ -145,6 +145,7 @@ func (h *Handler) GetArticleAudio(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no audio", http.StatusNotFound)
 		return
 	}
+	w.Header().Add("audio", "wav")
 	w.Write(ans)
 }
 

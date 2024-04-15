@@ -41,13 +41,14 @@ CREATE TABLE ArticleAudio(
 	ArticleID TEXT PRIMARY KEY NOT NULL,
 	Audio BLOB NOT NULL
 );
-INSERT INTO VoiceModel VALUES ("vi", "vi_VN/vais1000_low");
-INSERT INTO VoiceModel VALUES ("en", "en_US/cmu-arctic_low");`
+INSERT INTO VoiceModel VALUES ("vi", "vi_VN-vais1000-medium");
+INSERT INTO VoiceModel VALUES ("en", " en_US-ryan-low");`
 
 func GetInstance() *DBService {
-	_, err := os.Stat("./news.db")
+	os.Mkdir("temp", os.ModeDir)
+	_, err := os.Stat("./data/news.db")
 	not_exist := errors.Is(err, os.ErrNotExist)
-	db, err := sql.Open("sqlite3", "./news.db")
+	db, err := sql.Open("sqlite3", "./data/news.db")
 	if err != nil {
 		log.Panic(fmt.Errorf("GetInstance error: %s", err))
 	}

@@ -21,8 +21,7 @@
 go.work
 
 bin/build
-
-*.db
+bin/data
 .venv/
 *.bin
-*.gguf
+*.exe

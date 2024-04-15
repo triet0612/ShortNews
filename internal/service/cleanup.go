@@ -26,7 +26,7 @@ ArticleID IN (
 	SELECT ArticleID FROM Article WHERE date("now") - date(PubDate) > 1
 )`); err != nil {
 		slog.Error(err.Error())
-		slog.Error(tx.Rollback().Error())
+		tx.Rollback()
 		return
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM Thumbnail WHERE
@@ -34,12 +34,12 @@ ArticleID IN (
 	SELECT ArticleID FROM Article WHERE date("now") - date(PubDate) > 1
 )`); err != nil {
 		slog.Error(err.Error())
-		slog.Error(tx.Rollback().Error())
+		tx.Rollback()
 		return
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM Article WHERE date("now") - date(PubDate) > 1`); err != nil {
 		slog.Error(err.Error())
-		slog.Error(tx.Rollback().Error())
+		tx.Rollback()
 		return
 	}
 	if err := tx.Commit(); err != nil {

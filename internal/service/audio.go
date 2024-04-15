@@ -3,14 +3,11 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
-	"io"
 	"log/slog"
-	"net/http"
 	"newscrapper/internal/db"
+	"os"
 	"os/exec"
 	"strings"
-	"time"
 )
 
 type AudioService struct {
@@ -19,7 +16,6 @@ type AudioService struct {
 }
 
 func NewAudioService(db *db.DBService) *AudioService {
-	hostMimic3()
 	vm := map[string]string{}
 	rows, _ := db.QueryContext(context.Background(), "SELECT * FROM VoiceModel")
 	for rows.Next() {
@@ -28,23 +24,6 @@ func NewAudioService(db *db.DBService) *AudioService {
 		vm[lang] = modelName
 	}
 	return &AudioService{db: db, langAudio: vm}
-}
-
-func hostMimic3() {
-	slog.Info("starting mimic3-server")
-	go exec.Command("mimic3-server", "--port", "8001").Run()
-	for {
-		res, err := http.Get("http://localhost:8001")
-		if err != nil {
-			time.Sleep(5 * time.Second)
-			continue
-		}
-		if res.StatusCode == 200 {
-			break
-		}
-		time.Sleep(10 * time.Second)
-	}
-	slog.Info("starting mimic3-server complete")
 }
 
 func (a *AudioService) GenerateAudio(ctx context.Context) {
@@ -63,28 +42,28 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 			sum = cleanTextAudio(sum)
 			if err = a.updateArticleAudio(id, sum, lang, title); err != nil {
 				slog.Error(err.Error())
-				return
+				continue
 			}
 		}
 	}
 }
 
 func (a *AudioService) updateArticleAudio(id string, sum string, lang string, title string) error {
-	client := http.Client{Timeout: 10 * time.Second}
-	res, err := client.Post(fmt.Sprintf("http://localhost:8001/api/tts?voice=%s", a.langAudio[lang]), "text", strings.NewReader(title+"\n"+sum))
-	if err != nil {
+	cmd := exec.Command(
+		".venv/bin/python3", "-m", "piper", "--model", a.langAudio[lang],
+		"--data-dir", "./data", "--download-dir", "./data",
+		"--output_file", "./data/temp.wav")
+	cmd.Stdin = strings.NewReader(title + " " + sum)
+	if err := cmd.Run(); err != nil {
 		return err
 	}
-	out, err := io.ReadAll(res.Body)
+	file, err := os.ReadFile("./data/temp.wav")
 	if err != nil {
 		return err
-	}
-	if len(out) == 0 {
-		return nil
 	}
 	if _, err := a.db.ExecContext(context.Background(),
 		"UPDATE ArticleAudio SET Audio=? WHERE ArticleID=?",
-		out, id,
+		string(file), id,
 	); err != nil {
 		return err
 	}
