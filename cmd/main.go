@@ -1,6 +1,3 @@
-//go:build !windows && windows
-// +build !windows,windows
-
 package main
 
 import (
