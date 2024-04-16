@@ -1,24 +1,21 @@
 ## AI Enhanced RSS News App
 
 1. Dependencies:
-- [Ollama](https://ollama.com/) install with [gemma:2b](https://ollama.com/library/gemma) model
-- Require python3.11 install, with [mimic3](https://github.com/MycroftAI/mimic3) package.
+- [Ollama](https://ollama.com/) required to install
+- Installation file will auto download gemma:2b-instruct-v1.1-q4_0
 
-2. Program will get news from rss source.
+2. How does it works?
 - Get news from multiple source hourly.
-- Extract only main content using LLM
-- Create audio from Text-to-Speech model with summarized text.
+- Extract only main content using gemma:2b-instruct-v1.1-q4_0
+- Create audio from piper-TTS model with summarized text.
 - Store in the database.
-
-3. Host an HTTP server to get news content
-- Can add news source of choice.
-- Get news by source, with pagination.
-
-4. Summarize articles into short news.
-- A short news should:
-    - shows a title, thumbnail with summarize text.
-    - play voice audio of the summarize text.
-    - autoplay next news.
+- Host an HTTP server to get news content
+- User open http://localhost:8000 to use the app. When open the binary, auto launch in web browser.
 
 4. Language support:
-- English, Vietnamese first.
+- English, Vietnamese.
+
+5. Installation:
+- First, must install [Ollama](https://ollama.com/)
+- Windows: run "install.bat" script and wait until the installation is done. Run the short_news.exe binary.
+- Linux: use console to run "install.sh" script, wait until the installation is done. Run the short_news.bin binary.
