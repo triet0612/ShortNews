@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	prepare "newscrapper/cmdexec"
 	"newscrapper/internal/db"
 	"os"
 	"os/exec"
@@ -50,14 +51,14 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 
 func (a *AudioService) updateArticleAudio(id string, sum string, lang string, title string) error {
 	cmd := exec.Command(
-		".venv/bin/python3", "-m", "piper", "--model", a.langAudio[lang],
-		"--data-dir", "./data", "--download-dir", "./data",
-		"--output_file", "./data/temp.wav")
+		"./piper/piper", "--model", a.langAudio[lang],
+		"--output_file", "./temp.wav")
+	prepare.PrepareBackgroundCommand(cmd)
 	cmd.Stdin = strings.NewReader(title + " " + sum)
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	file, err := os.ReadFile("./data/temp.wav")
+	file, err := os.ReadFile("./temp.wav")
 	if err != nil {
 		return err
 	}

@@ -14,7 +14,11 @@ run_full:
 	make clean_bin && make build_linux && make build_web && make run_api
 
 build_windows:
-	GOOS=windows GOARCH=386 CGO_ENABLED=1 CC=i686-w64-mingw32-gcc go build -o ./bin/short_news.exe ./cmd/main.go
+	rm -rf ./bin/ && mkdir ./bin/ && cp ./install.ps1 ./bin/ && cp ./install.bat ./bin/ && \
+	GOOS=windows GOARCH=386 CGO_ENABLED=1 CC=i686-w64-mingw32-gcc go build -ldflags="-H=windowsgui" -o ./bin/short_news.exe ./cmd/main.go && \
+	make build_web
 
 build_linux:
-	go build -o ./bin/short_news.bin ./cmd/main.go
+	rm -rf ./bin/ && mkdir ./bin/ && cp ./install.sh ./bin/ && \
+	go build -o ./bin/short_news.bin ./cmd/main.go && \
+	make build_web

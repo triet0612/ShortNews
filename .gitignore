@@ -26,3 +26,6 @@ bin/data
 *.bin
 *.exe
 *.db
+piper/
+bin/*.sh
+bin/
