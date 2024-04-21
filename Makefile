@@ -15,7 +15,7 @@ run_full:
 
 build_windows:
 	rm -rf ./bin/ && mkdir ./bin/ && cp ./install.ps1 ./bin/ && cp ./install.bat ./bin/ && \
-	GOOS=windows GOARCH=386 CGO_ENABLED=1 CC=i686-w64-mingw32-gcc go build -ldflags="-H=windowsgui" -o ./bin/short_news.exe ./cmd/main.go && \
+	GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc go build -ldflags="-H=windowsgui" -o ./bin/short_news.exe ./cmd/main.go && \
 	make build_web
 
 build_linux:
