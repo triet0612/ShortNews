@@ -2,10 +2,10 @@ clean_bin:
 	rm -rf ./bin/news.db && rm -rf ./bin/build/
 
 build_web:
-	cd ./frontend && npm run build && mv build/ ../bin/
+	cd ./frontend && npm run build && mv build/ ../bin/build
 
 run_api:
-	cd ./bin/ && ./short_news.bin
+	cd ./bin && ./short_news.bin
 
 debug_api:
 	make build_linux && make run_api
