@@ -13,8 +13,3 @@ Expand-Archive -Path "./piper_windows_amd64.zip" -DestinationPath "./"
 Remove-Item "./piper_windows_amd64.zip"
 
 ollama pull gemma:2b-instruct-v1.1-q4_0
-
-$WshShell = New-Object -comObject WScript.Shell
-$Shortcut = $WshShell.CreateShortcut("C:\ProgramData\Microsoft\Windows\Start Menu\Programs\short_news.lnk")
-$Shortcut.TargetPath = "./short_news.exe"
-$Shortcut.Save()
