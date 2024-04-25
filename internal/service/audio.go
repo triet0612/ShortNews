@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	prepare "newscrapper/cmdexec"
 	"newscrapper/internal/db"
 	"os"
 	"os/exec"
@@ -53,7 +52,6 @@ func (a *AudioService) updateArticleAudio(id string, sum string, lang string, ti
 	cmd := exec.Command(
 		"./piper/piper", "--model", a.langAudio[lang],
 		"--output_file", "./temp.wav")
-	prepare.PrepareBackgroundCommand(cmd)
 	cmd.Stdin = strings.NewReader(title + " " + sum)
 	if err := cmd.Run(); err != nil {
 		return err

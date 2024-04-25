@@ -1,14 +1,14 @@
 package start
 
 import (
+	"bytes"
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"newscrapper/internal/config"
 	"newscrapper/internal/handler"
 	"newscrapper/internal/service"
-	"os/exec"
-	"runtime"
 	"sync"
 )
 
@@ -18,7 +18,14 @@ func RunServices(di *config.DI) {
 }
 
 func runHTTPServer(di *config.DI) {
-	log.Println("start http server")
+	slog.Info("pulling model")
+	jsonStr := []byte(`{"name": "gemma:2b-instruct-v1.1-q4_0", "stream": false}`)
+	_, err := http.Post("http://ollama:11434/api/pull", "application/json", bytes.NewBuffer(jsonStr))
+	if err != nil {
+		log.Fatal(err)
+	}
+	slog.Info("complete pulling")
+	slog.Info("start http server")
 	h := handler.NewHandler(di.DbCon, di.Clock, di.Signal)
 	mux := http.NewServeMux()
 	h.Mount(mux)
@@ -26,25 +33,7 @@ func runHTTPServer(di *config.DI) {
 		Addr:    ":8000",
 		Handler: mux,
 	}
-	open("http://localhost:8000")
 	log.Fatal(server.ListenAndServe())
-}
-
-func open(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
 }
 
 func runNewsService(di *config.DI) {

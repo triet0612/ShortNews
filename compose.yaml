@@ -1,0 +1,13 @@
+services:
+  ollama:
+    container_name: short_news_ollama
+    image: "ollama/ollama:latest"
+    expose:
+      - 11434
+  short_news:
+    container_name: short_news_app
+    depends_on:
+      - ollama
+    build: .
+    ports:
+      - "8000:8000"
