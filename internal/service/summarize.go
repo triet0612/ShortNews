@@ -117,8 +117,8 @@ func (s *SummarizeService) llmSummarize(doc string, language string) (string, er
 	ctx := context.Background()
 
 	textResponse, err := s.llm.Call(ctx, doc,
-		llms.WithTemperature(0), llms.WithTopP(1), llms.WithMaxTokens(250),
-		llms.WithMaxLength(600), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
+		llms.WithTemperature(0), llms.WithTopP(1),
+		llms.WithMaxLength(128), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
 	)
 	if err != nil {
 		return "", err

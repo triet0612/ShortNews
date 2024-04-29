@@ -1,12 +1,16 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"newscrapper/internal/db"
-	"os"
-	"os/exec"
+	"regexp"
 	"strings"
 )
 
@@ -49,20 +53,26 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 }
 
 func (a *AudioService) updateArticleAudio(id string, sum string, lang string, title string) error {
-	cmd := exec.Command(
-		"./piper/piper", "--model", a.langAudio[lang],
-		"--output_file", "./temp.wav")
-	cmd.Stdin = strings.NewReader(title + " " + sum)
-	if err := cmd.Run(); err != nil {
-		return err
+	body := map[string]string{
+		"text": cleanTextAudio(sum),
 	}
-	file, err := os.ReadFile("./temp.wav")
+	b, _ := json.Marshal(body)
+	res, err := http.Post("http://voice:8000/text-to-speech/",
+		"application/json",
+		bytes.NewBuffer(b),
+	)
 	if err != nil {
 		return err
 	}
+	defer res.Body.Close()
+	audio, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	fmt.Println(audio)
 	if _, err := a.db.ExecContext(context.Background(),
 		"UPDATE ArticleAudio SET Audio=? WHERE ArticleID=?",
-		string(file), id,
+		string(audio), id,
 	); err != nil {
 		return err
 	}
@@ -94,8 +104,7 @@ ON a1.ArticleID=a2.ArticleID AND a1.PublisherID=n.PublisherID AND a2.Audio=""`)
 }
 
 func cleanTextAudio(doc string) string {
-	doc = strings.ReplaceAll(doc, "\n", "        ")
-	doc = strings.ReplaceAll(doc, ".", "    ")
-	doc = strings.ReplaceAll(doc, ",", "  ")
-	return doc
+	reg := regexp.MustCompile(`[^a-z0-9A-Z\s_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễếệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]`)
+	doc = reg.ReplaceAllString(doc, "")
+	return strings.ReplaceAll(doc, "\n", "")
 }

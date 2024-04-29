@@ -2,9 +2,9 @@ package handler
 
 import (
 	"net/http"
+	"newscrapper/frontend"
 	"newscrapper/internal/config"
 	"newscrapper/internal/db"
-	"os"
 )
 
 type Handler struct {
@@ -42,8 +42,7 @@ func NewHandler(db *db.DBService, clock *config.Clock, signal chan struct{}) *Ha
 }
 
 func (h *Handler) Mount(mux *http.ServeMux) {
-	fsDir := os.DirFS("./build")
-	fileServer := http.FileServer(http.FS(fsDir))
+	fileServer := http.FileServer(frontend.BuildHTTPFS())
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		ex := &ExtendWriter{ResponseWriter: w}

@@ -3,6 +3,7 @@ package start
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"log"
 	"log/slog"
 	"net/http"
@@ -19,8 +20,12 @@ func RunServices(di *config.DI) {
 
 func runHTTPServer(di *config.DI) {
 	slog.Info("pulling model")
-	jsonStr := []byte(`{"name": "gemma:2b-instruct-v1.1-q4_0", "stream": false}`)
-	_, err := http.Post("http://ollama:11434/api/pull", "application/json", bytes.NewBuffer(jsonStr))
+	body := map[string]interface{}{
+		"name":   "gemma:2b-instruct-v1.1-q4_0",
+		"stream": false,
+	}
+	b, _ := json.Marshal(body)
+	_, err := http.Post("http://ollama:11434/api/pull", "application/json", bytes.NewBuffer(b))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,7 +35,7 @@ func runHTTPServer(di *config.DI) {
 	mux := http.NewServeMux()
 	h.Mount(mux)
 	server := http.Server{
-		Addr:    ":8000",
+		Addr:    ":8080",
 		Handler: mux,
 	}
 	log.Fatal(server.ListenAndServe())
