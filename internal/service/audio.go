@@ -42,9 +42,9 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 			slog.Info("Ending GenerateAudio")
 			return
 		default:
-			id, sum, lang, title := article[0], article[1], article[2], article[3]
+			id, sum := article[0], article[1]
 			sum = cleanTextAudio(sum)
-			if err = a.updateArticleAudio(id, sum, lang, title); err != nil {
+			if err = a.updateArticleAudio(id, sum); err != nil {
 				slog.Error(err.Error())
 				continue
 			}
@@ -52,7 +52,7 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 	}
 }
 
-func (a *AudioService) updateArticleAudio(id string, sum string, lang string, title string) error {
+func (a *AudioService) updateArticleAudio(id string, sum string) error {
 	body := map[string]string{
 		"text": cleanTextAudio(sum),
 	}

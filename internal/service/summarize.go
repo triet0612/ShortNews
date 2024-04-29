@@ -70,7 +70,7 @@ func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
 				slog.Warn(err.Error())
 				continue
 			}
-			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary, lang, article.Title); err != nil {
+			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary); err != nil {
 				slog.Warn(err.Error())
 				continue
 			}
