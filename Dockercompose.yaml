@@ -1,0 +1,22 @@
+services:
+  ollama:
+    container_name: ollama
+    image: "ollama/ollama:latest"
+    ports:
+      - "11434:11434"
+  voice:
+    container_name: voice
+    image: "valkyrie1/deployment:latest"
+    ports:
+      - "8000:8000"
+  short_news:
+    container_name: app
+    depends_on:
+      - ollama
+      - voice
+    build: .
+    environment:
+      - ollama_api=http://ollama:11434
+      - voice_api=http://voice:8000
+    ports:
+      - "8080:8080"

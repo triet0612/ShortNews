@@ -1,0 +1,11 @@
+services:
+  ollama:
+    container_name: ollama
+    image: "ollama/ollama:latest"
+    ports:
+      - "11434:11434"
+  voice:
+    container_name: voice
+    image: "valkyrie1/deployment:latest"
+    ports:
+      - "8000:8000"

@@ -3,11 +3,11 @@ module newscrapper
 go 1.22.0
 
 require (
-	github.com/PuerkitoBio/goquery v1.9.1
+	github.com/PuerkitoBio/goquery v1.9.2
 	github.com/google/uuid v1.6.0
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/mmcdole/gofeed v1.3.0
-	github.com/tmc/langchaingo v0.1.8
+	github.com/tmc/langchaingo v0.1.9
 )
 
 require (

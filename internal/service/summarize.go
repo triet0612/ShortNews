@@ -23,8 +23,8 @@ type SummarizeService struct {
 	audio *AudioService
 }
 
-func NewSummarizeService(db *db.DBService, audio *AudioService) *SummarizeService {
-	llm, err := ollama.New(ollama.WithServerURL("http://ollama:11434"), ollama.WithModel("gemma:2b-instruct-v1.1-q4_0"))
+func NewSummarizeService(db *db.DBService, audio *AudioService, config map[string]string) *SummarizeService {
+	llm, err := ollama.New(ollama.WithServerURL(config["ollama_api"]), ollama.WithModel("gemma:2b-instruct-v1.1-q4_0"))
 	if err != nil {
 		log.Fatal(err)
 	}

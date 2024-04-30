@@ -2,6 +2,7 @@ package config
 
 import (
 	"newscrapper/internal/db"
+	"os"
 	"time"
 )
 
@@ -22,6 +23,10 @@ func InitDependency() *DI {
 			PollRate: 1 * time.Hour,
 		},
 		Signal: make(chan struct{}),
+		Config: map[string]string{
+			"ollama_api": os.Getenv("ollama_api"),
+			"voice_api":  os.Getenv("voice_api"),
+		},
 	}
 }
 

@@ -25,7 +25,7 @@ func runHTTPServer(di *config.DI) {
 		"stream": false,
 	}
 	b, _ := json.Marshal(body)
-	_, err := http.Post("http://ollama:11434/api/pull", "application/json", bytes.NewBuffer(b))
+	_, err := http.Post(di.Config["ollama_api"]+"/api/pull", "application/json", bytes.NewBuffer(b))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,8 +43,8 @@ func runHTTPServer(di *config.DI) {
 
 func runNewsService(di *config.DI) {
 	fetcher := service.NewRSSFetchService(di.DbCon)
-	audio := service.NewAudioService(di.DbCon)
-	summary := service.NewSummarizeService(di.DbCon, audio)
+	audio := service.NewAudioService(di.DbCon, di.Config)
+	summary := service.NewSummarizeService(di.DbCon, audio, di.Config)
 	cleanup := service.NewDBCleanUp(di.DbCon)
 
 	ctx, cancel := context.WithCancel(context.Background())

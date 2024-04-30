@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -15,19 +14,12 @@ import (
 )
 
 type AudioService struct {
-	db        *db.DBService
-	langAudio map[string]string
+	db     *db.DBService
+	config map[string]string
 }
 
-func NewAudioService(db *db.DBService) *AudioService {
-	vm := map[string]string{}
-	rows, _ := db.QueryContext(context.Background(), "SELECT * FROM VoiceModel")
-	for rows.Next() {
-		lang, modelName := "", ""
-		rows.Scan(&lang, &modelName)
-		vm[lang] = modelName
-	}
-	return &AudioService{db: db, langAudio: vm}
+func NewAudioService(db *db.DBService, config map[string]string) *AudioService {
+	return &AudioService{db: db, config: config}
 }
 
 func (a *AudioService) GenerateAudio(ctx context.Context) {
@@ -57,7 +49,7 @@ func (a *AudioService) updateArticleAudio(id string, sum string) error {
 		"text": cleanTextAudio(sum),
 	}
 	b, _ := json.Marshal(body)
-	res, err := http.Post("http://voice:8000/text-to-speech/",
+	res, err := http.Post(a.config["voice_api"]+"/text-to-speech/",
 		"application/json",
 		bytes.NewBuffer(b),
 	)
@@ -69,7 +61,9 @@ func (a *AudioService) updateArticleAudio(id string, sum string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(audio)
+	if len(audio) == 0 {
+		return nil
+	}
 	if _, err := a.db.ExecContext(context.Background(),
 		"UPDATE ArticleAudio SET Audio=? WHERE ArticleID=?",
 		string(audio), id,
