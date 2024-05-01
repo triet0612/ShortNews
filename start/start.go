@@ -1,9 +1,7 @@
 package start
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"log"
 	"log/slog"
 	"net/http"
@@ -19,17 +17,6 @@ func RunServices(di *config.DI) {
 }
 
 func runHTTPServer(di *config.DI) {
-	slog.Info("pulling model")
-	body := map[string]interface{}{
-		"name":   "gemma:2b-instruct-v1.1-q4_0",
-		"stream": false,
-	}
-	b, _ := json.Marshal(body)
-	_, err := http.Post(di.Config["ollama_api"]+"/api/pull", "application/json", bytes.NewBuffer(b))
-	if err != nil {
-		log.Fatal(err)
-	}
-	slog.Info("complete pulling")
 	slog.Info("start http server")
 	h := handler.NewHandler(di.DbCon, di.Clock, di.Signal)
 	mux := http.NewServeMux()

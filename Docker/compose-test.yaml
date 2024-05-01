@@ -1,7 +1,9 @@
 services:
   ollama:
     container_name: ollama
-    image: "ollama/ollama:latest"
+    build: 
+      context: .
+      dockerfile: DockerfileOllama
     ports:
       - "11434:11434"
   voice:

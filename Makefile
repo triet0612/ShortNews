@@ -13,7 +13,7 @@ run_api:
 	./short_news.bin
 
 debug_api:
-	docker compose -f Dockercompose-test.yaml up -d && make build_debug && make run_api
+	docker compose -f ./Docker/compose-test.yaml up -d && make build_debug && make run_api
 
 compose:
-	docker compose up --build -d
+	docker compose -f ./Docker/compose.yaml up --build -d
