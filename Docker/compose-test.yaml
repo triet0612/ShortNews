@@ -2,8 +2,8 @@ services:
   ollama:
     container_name: ollama
     build: 
-      context: .
-      dockerfile: DockerfileOllama
+      context: ../
+      dockerfile: ./Docker/DockerfileOllama
     ports:
       - "11434:11434"
   voice:

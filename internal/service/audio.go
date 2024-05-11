@@ -34,9 +34,9 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 			slog.Info("Ending GenerateAudio")
 			return
 		default:
-			id, sum := article[0], article[1]
+			id, sum, title := article[0], article[1], article[2]
 			sum = cleanTextAudio(sum)
-			if err = a.updateArticleAudio(id, sum); err != nil {
+			if err = a.updateArticleAudio(id, sum, title); err != nil {
 				slog.Error(err.Error())
 				continue
 			}
@@ -44,9 +44,9 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 	}
 }
 
-func (a *AudioService) updateArticleAudio(id string, sum string) error {
+func (a *AudioService) updateArticleAudio(id string, sum string, title string) error {
 	body := map[string]string{
-		"text": cleanTextAudio(sum),
+		"text": cleanTextAudio(title + "\n" + sum),
 	}
 	b, _ := json.Marshal(body)
 	res, err := http.Post(a.config["voice_api"]+"/text-to-speech/",

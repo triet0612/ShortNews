@@ -70,7 +70,7 @@ func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
 				slog.Warn(err.Error())
 				continue
 			}
-			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary); err != nil {
+			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary, article.Title); err != nil {
 				slog.Warn(err.Error())
 				continue
 			}
@@ -117,8 +117,8 @@ func (s *SummarizeService) llmSummarize(doc string, language string) (string, er
 	ctx := context.Background()
 
 	textResponse, err := s.llm.Call(ctx, doc,
-		llms.WithTemperature(0), llms.WithTopP(1),
-		llms.WithMaxLength(128), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
+		llms.WithTemperature(0), llms.WithTopP(1), llms.WithMaxTokens(96),
+		llms.WithMaxLength(96), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
 	)
 	if err != nil {
 		return "", err
