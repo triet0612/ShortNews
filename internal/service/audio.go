@@ -1,25 +1,31 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
 	"log/slog"
-	"net/http"
 	"newscrapper/internal/db"
+	"os"
+	"os/exec"
 	"regexp"
 	"strings"
 )
 
 type AudioService struct {
-	db     *db.DBService
-	config map[string]string
+	db        *db.DBService
+	langAudio map[string]string
+	config    map[string]string
 }
 
 func NewAudioService(db *db.DBService, config map[string]string) *AudioService {
-	return &AudioService{db: db, config: config}
+	vm := map[string]string{}
+	rows, _ := db.QueryContext(context.Background(), "SELECT * FROM VoiceModel")
+	for rows.Next() {
+		lang, modelName := "", ""
+		rows.Scan(&lang, &modelName)
+		vm[lang] = modelName
+	}
+	return &AudioService{db: db, config: config, langAudio: vm}
 }
 
 func (a *AudioService) GenerateAudio(ctx context.Context) {
@@ -34,9 +40,9 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 			slog.Info("Ending GenerateAudio")
 			return
 		default:
-			id, sum, title := article[0], article[1], article[2]
+			id, sum, lang, title := article[0], article[1], article[2], article[3]
 			sum = cleanTextAudio(sum)
-			if err = a.updateArticleAudio(id, sum, title); err != nil {
+			if err = a.updateArticleAudio(id, sum, lang, title); err != nil {
 				slog.Error(err.Error())
 				continue
 			}
@@ -44,29 +50,21 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 	}
 }
 
-func (a *AudioService) updateArticleAudio(id string, sum string, title string) error {
-	body := map[string]string{
-		"text": cleanTextAudio(title + "\n" + sum),
-	}
-	b, _ := json.Marshal(body)
-	res, err := http.Post(a.config["voice_api"]+"/text-to-speech/",
-		"application/json",
-		bytes.NewBuffer(b),
-	)
-	if err != nil {
+func (a *AudioService) updateArticleAudio(id string, sum string, lang string, title string) error {
+	cmd := exec.Command(
+		"piper", "--model", a.langAudio[lang],
+		"--output_file", "./temp.wav")
+	cmd.Stdin = strings.NewReader(title + " " + sum)
+	if err := cmd.Run(); err != nil {
 		return err
 	}
-	defer res.Body.Close()
-	audio, err := io.ReadAll(res.Body)
+	file, err := os.ReadFile("./temp.wav")
 	if err != nil {
 		return err
-	}
-	if len(audio) == 0 {
-		return nil
 	}
 	if _, err := a.db.ExecContext(context.Background(),
 		"UPDATE ArticleAudio SET Audio=? WHERE ArticleID=?",
-		string(audio), id,
+		string(file), id,
 	); err != nil {
 		return err
 	}
@@ -76,7 +74,7 @@ func (a *AudioService) updateArticleAudio(id string, sum string, title string) e
 func (a *AudioService) readArticleNoAudio() (*[][]string, error) {
 	ans := [][]string{}
 	rows, err := a.db.QueryContext(context.Background(),
-		`SELECT a1.ArticleID, a1.Summary, n.Language, a1.Title
+		`SELECT a1.ArticleID, a1.Summary, v.Audio, a1.Title
 FROM Article a1 JOIN ArticleAudio a2 JOIN NewsSource n
 ON a1.ArticleID=a2.ArticleID AND a1.PublisherID=n.PublisherID AND a2.Audio=""`)
 	if err != nil {

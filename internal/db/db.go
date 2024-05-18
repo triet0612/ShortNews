@@ -41,8 +41,8 @@ CREATE TABLE ArticleAudio(
 	ArticleID TEXT PRIMARY KEY NOT NULL,
 	Audio BLOB NOT NULL
 );
-INSERT INTO VoiceModel VALUES ("vi", "vi_VN.onnx");
-INSERT INTO VoiceModel VALUES ("en", "en_US.onnx");`
+INSERT INTO VoiceModel VALUES ("vi", "vi_VN-vais1000-medium");
+INSERT INTO VoiceModel VALUES ("en", "en_US-arctic-medium");`
 
 func GetInstance() *DBService {
 	_, err := os.Stat("./news.db")

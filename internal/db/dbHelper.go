@@ -25,3 +25,7 @@ func (d *DBService) ReadSourceRSS() (*[]model.NewsSource, error) {
 	}
 	return &ans, nil
 }
+
+func (d *DBService) GetLang() {
+
+}

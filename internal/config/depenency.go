@@ -25,7 +25,6 @@ func InitDependency() *DI {
 		Signal: make(chan struct{}),
 		Config: map[string]string{
 			"ollama_api": os.Getenv("ollama_api"),
-			"voice_api":  os.Getenv("voice_api"),
 		},
 	}
 }

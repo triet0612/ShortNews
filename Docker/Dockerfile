@@ -13,6 +13,9 @@ RUN go build ./cmd/main.go
 FROM debian:stable
 RUN apt-get update -y
 RUN apt-get install -y ca-certificates
+RUN apt-get install python3.11-full -y
+RUN apt-get install python3-pip -y
+RUN pip install piper-tts --break-system-packages
 WORKDIR /app
 COPY --from=api_stage /app/main /app
 
