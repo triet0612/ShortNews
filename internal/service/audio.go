@@ -51,17 +51,23 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 }
 
 func (a *AudioService) updateArticleAudio(id string, sum string, lang string, title string) error {
+	slog.Info(a.langAudio[lang])
 	cmd := exec.Command(
 		"piper", "--model", a.langAudio[lang],
 		"--output_file", "./temp.wav")
-	cmd.Stdin = strings.NewReader(title + " " + sum)
+	cmd.Stdin = strings.NewReader(cleanTextAudio(title + " " + sum))
+	s := &strings.Builder{}
+	cmd.Stderr = s
 	if err := cmd.Run(); err != nil {
+		slog.Info(cleanTextAudio(title + " " + sum))
+		slog.Info(s.String())
 		return err
 	}
 	file, err := os.ReadFile("./temp.wav")
 	if err != nil {
 		return err
 	}
+
 	if _, err := a.db.ExecContext(context.Background(),
 		"UPDATE ArticleAudio SET Audio=? WHERE ArticleID=?",
 		string(file), id,
@@ -74,7 +80,7 @@ func (a *AudioService) updateArticleAudio(id string, sum string, lang string, ti
 func (a *AudioService) readArticleNoAudio() (*[][]string, error) {
 	ans := [][]string{}
 	rows, err := a.db.QueryContext(context.Background(),
-		`SELECT a1.ArticleID, a1.Summary, v.Audio, a1.Title
+		`SELECT a1.ArticleID, a1.Summary, n.Language, a1.Title
 FROM Article a1 JOIN ArticleAudio a2 JOIN NewsSource n
 ON a1.ArticleID=a2.ArticleID AND a1.PublisherID=n.PublisherID AND a2.Audio=""`)
 	if err != nil {
