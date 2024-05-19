@@ -10,13 +10,17 @@ COPY . .
 COPY --from=frontend_stage /app/build /app/frontend/build
 RUN go build ./cmd/main.go
 
-FROM debian:stable
+FROM ollama/ollama
 RUN apt-get update -y
 RUN apt-get install -y ca-certificates
 RUN apt-get install python3.11-full -y
 RUN apt-get install python3-pip -y
-RUN pip install piper-tts --break-system-packages
+RUN pip install -U piper-tts
+COPY ./ollama.sh /ollama.sh
+RUN chmod +x ollama.sh \
+    && ./ollama.sh
 WORKDIR /app
 COPY --from=api_stage /app/main /app
 
+EXPOSE 8080
 ENTRYPOINT [ "/app/main" ]

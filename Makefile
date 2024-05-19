@@ -15,5 +15,8 @@ run_api:
 debug_api:
 	docker compose -f ./Docker/compose-test.yaml up -d && make build_debug && make run_api
 
-compose:
-	docker compose -f ./Docker/compose.yaml up --build -d
+docker_build:
+	docker image build . -t shortnews
+
+docker_publish:
+	docker tag docker/welcome-to-docker YOUR-USERNAME/welcome-to-docker

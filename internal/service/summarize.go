@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"newscrapper/internal/db"
 	"newscrapper/internal/model"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -23,8 +24,30 @@ type SummarizeService struct {
 	audio *AudioService
 }
 
+func hostOllama() {
+	res, err := http.Get("http://localhost:11434")
+	if err == nil && res.StatusCode == 200 {
+		slog.Info("ollama started")
+	} else {
+		slog.Info("waiting to start ollama")
+		go exec.Command("ollama", "serve").Run()
+		for {
+			res, err := http.Get("http://localhost:11434")
+			if err != nil {
+				time.Sleep(5 * time.Second)
+				continue
+			}
+			if res.StatusCode == 200 {
+				break
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}
+}
+
 func NewSummarizeService(db *db.DBService, audio *AudioService, config map[string]string) *SummarizeService {
-	llm, err := ollama.New(ollama.WithServerURL(config["ollama_api"]), ollama.WithModel("gemma:2b-instruct-v1.1-q4_0"))
+	hostOllama()
+	llm, err := ollama.New(ollama.WithModel("gemma:2b-instruct-v1.1-q4_0"))
 	if err != nil {
 		log.Fatal(err)
 	}

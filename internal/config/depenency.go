@@ -2,7 +2,6 @@ package config
 
 import (
 	"newscrapper/internal/db"
-	"os"
 	"time"
 )
 
@@ -24,7 +23,7 @@ func InitDependency() *DI {
 		},
 		Signal: make(chan struct{}),
 		Config: map[string]string{
-			"ollama_api": os.Getenv("ollama_api"),
+			"ollama_api": "http://localhost:11434",
 		},
 	}
 }
