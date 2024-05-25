@@ -8,6 +8,7 @@ type NewsSource struct {
 	PublisherID string
 	Link        string
 	Language    string
+	VoiceType   string
 	Ext         map[string]interface{}
 }
 

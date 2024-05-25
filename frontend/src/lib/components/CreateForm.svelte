@@ -11,10 +11,11 @@
         <label class="w-full text-2xl">
             <input bind:value={rss.link} type="text" class="w-full text-center p-4 bg-neutral rounded-xl" placeholder="RSS Link:"/>
         </label>
-        <select bind:value={rss.lang} class="p-5 text-2xl w-full text-center bg-neutral rounded-xl">
-            <option disabled selected class="">Language:</option>
-            <option value="vi">Vietnamese</option>
-            <option value="en">English</option>
+        <select bind:value={rss.voiceType} class="p-5 text-2xl w-full text-center bg-neutral rounded-xl">
+            <option disabled selected class="">Voice Type:</option>
+            <option value="model_1">model_1</option>
+            <option value="model_2">model_2</option>
+            <option value="model_2">model_2</option>
         </select>
         <button class="btn btn-accent w-1/2 mx-auto text-2xl" on:click={async () => {await createSource(rss); location.reload();}}>
             Submit

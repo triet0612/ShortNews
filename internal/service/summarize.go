@@ -61,8 +61,7 @@ func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
 				}
 				article.Summary += s.Text()
 			})
-			lang := article.Ext["Language"].(string)
-			if article.Summary, err = s.llmSummarize(article.Summary, lang); err != nil {
+			if article.Summary, err = s.llmSummarize(article.Summary); err != nil {
 				slog.Warn(err.Error())
 				continue
 			}
@@ -70,7 +69,7 @@ func (s *SummarizeService) ArticleSummarize(ctx context.Context) {
 				slog.Warn(err.Error())
 				continue
 			}
-			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary, article.Title); err != nil {
+			if err := s.audio.updateArticleAudio(article.ArticleID, article.Summary, article.Title, article.Ext["VoiceType"].(string)); err != nil {
 				slog.Warn(err.Error())
 				continue
 			}
@@ -82,7 +81,7 @@ func (s *SummarizeService) ReadArticleNoSummary() (*[]model.Article, error) {
 	ans := []model.Article{}
 	rows, err := s.db.QueryContext(
 		context.Background(),
-		`SELECT a.*, n.Language FROM Article a JOIN NewsSource n
+		`SELECT a.*, n.VoiceType FROM Article a JOIN NewsSource n
 	ON a.PublisherID=n.PublisherID WHERE a.Summary = '' ORDER BY a.PubDate DESC`,
 	)
 	if err != nil {
@@ -97,7 +96,7 @@ func (s *SummarizeService) ReadArticleNoSummary() (*[]model.Article, error) {
 			slog.Warn(err.Error())
 			continue
 		}
-		a.Ext["Language"] = temp
+		a.Ext["VoiceType"] = temp
 		ans = append(ans, *a)
 	}
 	if len(ans) == 0 {
@@ -106,19 +105,16 @@ func (s *SummarizeService) ReadArticleNoSummary() (*[]model.Article, error) {
 	return &ans, nil
 }
 
-func (s *SummarizeService) llmSummarize(doc string, language string) (string, error) {
+func (s *SummarizeService) llmSummarize(doc string) (string, error) {
 	doc = cleanText(doc)
-	prompt := `Can you provide a comprehensive summary of the given text? The summary should cover all the key points and main ideas presented in the original text, while also condensing the information into a concise and easy-to-understand format. Please ensure that the summary includes relevant details and examples that support the main ideas, while avoiding any unnecessary information or repetition. The length of the summary should be appropriate for the length and complexity of the original text, providing a clear and accurate overview without omitting any important information.`
-	if language == "vi" {
-		prompt = "Bạn có thể  tóm tắt văn bản trên? Tóm tắt nên bao gồm những thông tin chính trong văn bản gốc và cô đọng những thông tin đó một cách dễ hiểu và ngắn gọn. Hãy đảm bảo những chi tiết quan trọng theo ý của tác giả và tránh những thông tin không cần thiết hay lặp lại. Độ dài nên phù hợp với độ dài và độ phức tạp của văn bản gốc, giữ các thông tin chính xác và ngắn gọn mà không loại bỏ những thông tin quan trọng."
-	}
+	prompt := "Bạn có thể  tóm tắt văn bản trên? Tóm tắt nên bao gồm những thông tin chính trong văn bản gốc và cô đọng những thông tin đó một cách dễ hiểu và ngắn gọn. Hãy đảm bảo những chi tiết quan trọng theo ý của tác giả và tránh những thông tin không cần thiết hay lặp lại. Độ dài nên phù hợp với độ dài và độ phức tạp của văn bản gốc, giữ các thông tin chính xác và ngắn gọn mà không loại bỏ những thông tin quan trọng."
 	doc = doc + "\n\n" + prompt
 
 	ctx := context.Background()
 
 	textResponse, err := s.llm.Call(ctx, doc,
-		llms.WithTemperature(0), llms.WithTopP(1), llms.WithMaxTokens(96),
-		llms.WithMaxLength(96), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
+		llms.WithTemperature(0), llms.WithTopP(1), llms.WithMaxTokens(64),
+		llms.WithMaxLength(64), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
 	)
 	if err != nil {
 		return "", err

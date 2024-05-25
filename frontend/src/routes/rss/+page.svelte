@@ -22,8 +22,8 @@
                         <p class="py-2 w-3/4 hover:text-white"><a href={rss.link}>{rss.link}</a></p>
                     </div>
                     <div class="w-1/4 flex flex-row bg-neutral border-2 rounded-xl text-center items-center justify-evenly font-serif text-lg">
-                        <p class="py-4 text-base text-accent font-bold">Language: </p>                    
-                        <p class="py-4">{rss.lang}</p>
+                        <p class="py-4 text-base text-accent font-bold">Voice type: </p>                    
+                        <p class="py-4">{rss.voiceType}</p>
                     </div>
                 </div>
                 <div class="w-2/12 flex gap-2">

@@ -38,9 +38,9 @@ func (h *Handler) CreateRssSource(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no link found", http.StatusInternalServerError)
 		return
 	}
-	lang, ok := newRssSource["language"]
+	voiceType, ok := newRssSource["VoiceType"]
 	if !ok {
-		http.Error(w, "no language found", http.StatusInternalServerError)
+		http.Error(w, "no voice_type found", http.StatusInternalServerError)
 		return
 	}
 	url, err := url.ParseRequestURI(rssLink)
@@ -51,11 +51,11 @@ func (h *Handler) CreateRssSource(w http.ResponseWriter, r *http.Request) {
 	src := &model.NewsSource{
 		PublisherID: uuid.NewString(),
 		Link:        url.String(),
-		Language:    lang,
+		VoiceType:   voiceType,
 	}
 	if _, err := h.db.ExecContext(context.Background(),
 		"INSERT INTO NewsSource VALUES (?, ?, ?)",
-		src.PublisherID, src.Link, src.Language,
+		src.PublisherID, src.Link, src.VoiceType,
 	); err != nil {
 		slog.Error(err.Error())
 		http.Error(w, "error create rss source", http.StatusInternalServerError)

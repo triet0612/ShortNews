@@ -5,12 +5,12 @@ export class NewsSource {
   /**
    * @param {string} pubID 
    * @param {string} link 
-   * @param {string} lang 
+   * @param {string} voiceType 
    */
-  constructor(pubID, link, lang) {
+  constructor(pubID, link, voiceType) {
     this.pubID = pubID
     this.link = link
-    this.lang = lang
+    this.voiceType = voiceType
   }
 }
 /**
@@ -29,7 +29,7 @@ export async function newsSourcefromURL() {
   let options = []
   jsResponse.map(v => {
     options.push(new NewsSource(
-      v["PublisherID"], v["Link"], v["Language"],
+      v["PublisherID"], v["Link"], v["VoiceType"],
     ))
   })
   return options
@@ -43,7 +43,7 @@ export async function createSource(newSrc) {
     "method": "POST", 
     "body": JSON.stringify({
       "link": newSrc.link,
-      "language": newSrc.lang
+      "VoiceType": newSrc.voiceType
     })
   }).then(res => res.status === 200? "ok": "no")
   .catch(err => {console.log(err); "no"})

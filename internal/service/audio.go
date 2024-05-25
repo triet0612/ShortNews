@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/db"
@@ -34,9 +35,9 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 			slog.Info("Ending GenerateAudio")
 			return
 		default:
-			id, sum, title := article[0], article[1], article[2]
+			id, sum, voice, title := article[0], article[1], article[2], article[3]
 			sum = cleanTextAudio(sum)
-			if err = a.updateArticleAudio(id, sum, title); err != nil {
+			if err = a.updateArticleAudio(id, sum, title, voice); err != nil {
 				slog.Error(err.Error())
 				continue
 			}
@@ -44,15 +45,17 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 	}
 }
 
-func (a *AudioService) updateArticleAudio(id string, sum string, title string) error {
+func (a *AudioService) updateArticleAudio(id string, sum string, title string, voice string) error {
 	body := map[string]string{
 		"text": cleanTextAudio(title + "\n" + sum),
+		"type": voice,
 	}
 	b, _ := json.Marshal(body)
 	res, err := http.Post(a.config["voice_api"]+"/text-to-speech/",
 		"application/json",
 		bytes.NewBuffer(b),
 	)
+	log.Println(body)
 	if err != nil {
 		return err
 	}
@@ -76,7 +79,7 @@ func (a *AudioService) updateArticleAudio(id string, sum string, title string) e
 func (a *AudioService) readArticleNoAudio() (*[][]string, error) {
 	ans := [][]string{}
 	rows, err := a.db.QueryContext(context.Background(),
-		`SELECT a1.ArticleID, a1.Summary, n.Language, a1.Title
+		`SELECT a1.ArticleID, a1.Summary, n.VoiceType, a1.Title
 FROM Article a1 JOIN ArticleAudio a2 JOIN NewsSource n
 ON a1.ArticleID=a2.ArticleID AND a1.PublisherID=n.PublisherID AND a2.Audio=""`)
 	if err != nil {
@@ -84,12 +87,12 @@ ON a1.ArticleID=a2.ArticleID AND a1.PublisherID=n.PublisherID AND a2.Audio=""`)
 	}
 	defer rows.Close()
 	for rows.Next() {
-		id, sum, lang, title := "", "", "", ""
-		if err := rows.Scan(&id, &sum, &lang, &title); err != nil {
+		id, sum, voice, title := "", "", "", ""
+		if err := rows.Scan(&id, &sum, &voice, &title); err != nil {
 			slog.Warn(err.Error())
 			continue
 		}
-		ans = append(ans, []string{id, sum, lang, title})
+		ans = append(ans, []string{id, sum, voice, title})
 	}
 	if len(ans) == 0 {
 		return nil, errors.New("no items")

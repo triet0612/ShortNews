@@ -14,7 +14,7 @@ func (d *DBService) ReadSourceRSS() (*[]model.NewsSource, error) {
 	}
 	for rows.Next() {
 		var temp model.NewsSource
-		err := rows.Scan(&temp.PublisherID, &temp.Link, &temp.Language)
+		err := rows.Scan(&temp.PublisherID, &temp.Link, &temp.VoiceType)
 		if err != nil {
 			return nil, err
 		}
