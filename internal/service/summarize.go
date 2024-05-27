@@ -113,8 +113,8 @@ func (s *SummarizeService) llmSummarize(doc string) (string, error) {
 	ctx := context.Background()
 
 	textResponse, err := s.llm.Call(ctx, doc,
-		llms.WithTemperature(0), llms.WithTopP(1), llms.WithMaxTokens(64),
-		llms.WithMaxLength(64), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
+		llms.WithTemperature(0), llms.WithTopP(1), llms.WithMaxTokens(256),
+		llms.WithMaxLength(256), llms.WithFrequencyPenalty(0), llms.WithPresencePenalty(0),
 	)
 	if err != nil {
 		return "", err
