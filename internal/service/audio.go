@@ -10,8 +10,6 @@ import (
 	"log/slog"
 	"net/http"
 	"newscrapper/internal/db"
-	"regexp"
-	"strings"
 )
 
 type AudioService struct {
@@ -36,7 +34,6 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 			return
 		default:
 			id, sum, voice, title := article[0], article[1], article[2], article[3]
-			sum = cleanTextAudio(sum)
 			if err = a.updateArticleAudio(id, sum, title, voice); err != nil {
 				slog.Error(err.Error())
 				continue
@@ -47,7 +44,7 @@ func (a *AudioService) GenerateAudio(ctx context.Context) {
 
 func (a *AudioService) updateArticleAudio(id string, sum string, title string, voice string) error {
 	body := map[string]string{
-		"text": cleanTextAudio(title + "\n" + sum),
+		"text": title + "\n" + sum,
 		"type": voice,
 	}
 	b, _ := json.Marshal(body)
@@ -98,10 +95,4 @@ ON a1.ArticleID=a2.ArticleID AND a1.PublisherID=n.PublisherID AND a2.Audio=""`)
 		return nil, errors.New("no items")
 	}
 	return &ans, nil
-}
-
-func cleanTextAudio(doc string) string {
-	reg := regexp.MustCompile(`[^a-z0-9A-Z\s_ÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơƯĂẠẢẤẦẨẪẬẮẰẲẴẶẸẺẼỀỀỂưăạảấầẩẫậắằẳẵặẹẻẽềềểỄỆỈỊỌỎỐỒỔỖỘỚỜỞỠỢỤỦỨỪễếệỉịọỏốồổỗộớờởỡợụủứừỬỮỰỲỴÝỶỸửữựỳỵỷỹ]`)
-	doc = reg.ReplaceAllString(doc, "")
-	return strings.ReplaceAll(doc, "\n", "")
 }

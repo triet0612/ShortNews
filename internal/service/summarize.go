@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"newscrapper/internal/db"
 	"newscrapper/internal/model"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -106,7 +104,6 @@ func (s *SummarizeService) ReadArticleNoSummary() (*[]model.Article, error) {
 }
 
 func (s *SummarizeService) llmSummarize(doc string) (string, error) {
-	doc = cleanText(doc)
 	prompt := "Bạn có thể  tóm tắt văn bản trên? Tóm tắt nên bao gồm những thông tin chính trong văn bản gốc và cô đọng những thông tin đó một cách dễ hiểu và ngắn gọn. Hãy đảm bảo những chi tiết quan trọng theo ý của tác giả và tránh những thông tin không cần thiết hay lặp lại. Độ dài nên phù hợp với độ dài và độ phức tạp của văn bản gốc, giữ các thông tin chính xác và ngắn gọn mà không loại bỏ những thông tin quan trọng."
 	doc = doc + "\n\n" + prompt
 
@@ -119,7 +116,6 @@ func (s *SummarizeService) llmSummarize(doc string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	textResponse = cleanText(textResponse)
 	return textResponse, nil
 }
 
@@ -131,13 +127,4 @@ func (s *SummarizeService) updateSummaryArticle(article *model.Article) error {
 		return err
 	}
 	return nil
-}
-
-func cleanText(doc string) string {
-	re := regexp.MustCompile(`\*\*.+\*\*`)
-	doc = re.ReplaceAllString(doc, "")
-	re = regexp.MustCompile(`[\[\];'":<>/|\\=+\-_()*&^%$#@!~]`)
-	doc = re.ReplaceAllString(doc, " ")
-	doc = strings.Trim(doc, " ")
-	return doc
 }
