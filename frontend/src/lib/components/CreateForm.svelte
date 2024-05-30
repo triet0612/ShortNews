@@ -15,7 +15,7 @@
             <option disabled selected class="">Voice Type:</option>
             <option value="model_1">model_1</option>
             <option value="model_2">model_2</option>
-            <option value="model_2">model_2</option>
+            <option value="model_3">model_3</option>
         </select>
         <button class="btn btn-accent w-1/2 mx-auto text-2xl" on:click={async () => {await createSource(rss); location.reload();}}>
             Submit
